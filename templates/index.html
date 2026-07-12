@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JR24's Home VPN Printing - </title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
+            min-height: 100vh;
+            font-size: 0.95rem;
+        }
+        .main-card {
+            border: none;
+            border-radius: 14px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+        .drop-zone {
+            border: 1px dashed #0d6efd;
+            border-radius: 10px;
+            padding: 18px;
+            text-align: center;
+            background-color: #f8f9fa;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .drop-zone:hover, .drop-zone.dragover {
+            background-color: #eef3ff;
+            border-color: #0a58ca;
+        }
+        .printer-option {
+            font-size: 0.9rem;
+        }
+        .compact-label {
+            font-size: 0.9rem;
+            margin-bottom: 0.35rem;
+            color: #0d6efd !important;
+            font-weight: 700;
+        }
+        .compact-label i {
+            color: #0d6efd;
+        }
+        .compact-control {
+            padding: 0.5rem 0.7rem;
+            font-size: 0.92rem;
+        }
+        .compact-option {
+            padding: 0.55rem 0.7rem;
+        }
+        .compact-btn {
+            padding: 0.7rem 1rem;
+            font-size: 0.95rem;
+        }
+        /* Highlight selected print mode option */
+        .compact-option {
+            border: none !important;
+            padding: 0.15rem;
+        }
+        .compact-option .form-check-label {
+            display: block;
+            padding: 0.55rem 0.7rem;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
+        }
+        .compact-option .form-check-input {
+            margin-right: 0.5rem;
+        }
+        .compact-option .form-check-input:checked + .form-check-label {
+            background-color: #e7f1ff;
+            border-color: #0a58ca;
+            box-shadow: 0 4px 10px rgba(10,88,202,0.08);
+            color: #0a58ca;
+        }
+        .status-ready {
+            color: #198754;
+        }
+        .status-printing {
+            color: #fd7e14;
+        }
+        .status-unknown {
+            color: #dc3545;
+        }
+        .ink-level-normal {
+            color: #198754;
+        }
+        .ink-level-low {
+            color: #fd7e14;
+        }
+        .ink-level-empty {
+            color: #dc3545;
+        }
+        .ink-level-unknown {
+            color: #6c757d;
+        }
+        .ink-level-text {
+            display: inline-block;
+            margin-top: 0.15rem;
+        }
+    </style>
+</head>
+<body class="d-flex align-items-center py-3">
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-8 col-lg-6">
+                
+                <!-- ส่วนแสดง Alert Message -->
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
+                        <i class="bi {% if category == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                        {{ message }}
+                        <button type="button" class="btn-close" data-Distributed-dismiss="alert" aria-label="Close" onclick="this.parentElement.remove();"></button>
+                      </div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <!-- บัตรควบคุมหลัก (Main Card) -->
+                <div class="card main-card p-3 p-sm-4 bg-white">
+                    <div class="text-center mb-3">
+                        <div class="display-6 text-primary mb-1">
+                            <i class="bi bi-printer-fill"></i>
+                        </div>
+                        <h3 class="fw-bold text-primary mb-1">JR24's Home VPN Printing</h3>
+                    </div>
+
+                    <form method="POST" enctype="multipart/form-data" id="printForm">
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="mb-4">
+                            
+                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('file').click()">
+                                <i class="bi bi-cloud-arrow-up text-primary display-6 mb-2 d-block"></i>
+                                <span class="fw-medium text-dark d-block" id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></span>
+                                <span class="text-muted small d-block mt-1">รองรับ PDF, รูปภาพ และเอกสารทั่วไป (สูงสุด 16MB)</span>
+                            </div>
+                            
+                            <!-- ซ่อน Input ดั้งเดิมไว้ แล้วใช้ตัว Drop Zone ควบคุมแทน -->
+                            <input type="file" name="file" id="file" class="d-none" required onchange="updateFileName()">
+                        </div>
+                            <div class="mb-4">
+                                <label for="printer" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-hdd-network-fill me-1"></i> เลือกเครื่องพิมพ์
+                                </label>
+                                <select class="form-select printer-option compact-control" name="printer" id="printer" required>
+                                    {% if printers %}
+                                        {% for printer in printers %}
+                                            <option value="{{ printer.name }}" data-status="{{ printer.status }}" data-ink-level="{{ printer.ink_level }}">
+                                                🖨️ {{ printer.name }}
+                                            </option>
+                                        {% endfor %}
+                                    {% else %}
+                                        <option value="" disabled selected>❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS</option>
+                                    {% endif %}
+                                </select>
+
+                                <div id="printerStatus" class="text-muted small mt-1">
+                                    <div>สถานะ: <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span></div>
+                                    <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText" class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="paper_size" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-file-earmark-text me-1"></i> ขนาดกระดาษ
+                                </label>
+                                <select class="form-select compact-control" name="paper_size" id="paper_size">
+                                    <option value="A4" selected>A4</option>
+                                    <option value="Letter">Letter</option>
+                                    <option value="Legal">Legal</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label for="print_quality" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-speedometer2 me-1"></i> คุณภาพการพิมพ์
+                                </label>
+                                <select class="form-select compact-control" name="print_quality" id="print_quality">
+                                    <option value="draft">ร่าง</option>
+                                    <option value="normal" selected>ทั่วไป</option>
+                                    <option value="high">สูง</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-6">
+                                <label for="print_mode" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-palette-fill me-1"></i> โหมดการพิมพ์
+                                </label>
+                                <select class="form-select compact-control" name="print_mode" id="print_mode">
+                                    <option value="color" selected>🎨 สี</option>
+                                    <option value="bw">⚫ ขาวดำ</option>
+                                </select>
+                            </div>
+                            <div class="col-4">
+                                <label for="copies" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-copy me-1"></i> จำนวนชุด
+                                </label>
+                                <input type="number" class="form-control compact-control" name="copies" id="copies" min="1" max="100" value="1" required>
+                            </div>
+                        </div>
+
+                        <div id="fileAlert" class="alert alert-warning d-none mt-2" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i> โปรดอัปโหลดไฟล์ก่อนกดสั่งพิมพ์
+                        </div>
+
+                        <!-- ปุ่มส่งพิมพ์ -->
+                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm mt-2 compact-btn">
+                            <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
+                        </button>
+                    </form>
+
+                </div>
+
+                <div class="text-center mt-3">
+                    <p class="text-secondary small mb-0">Managed by JR24 tech</p>
+                    <p class="text-secondary small mb-0">Powered by Raspberry Pi • Tailscale • OpenPrinting CUPS</p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap 5 JavaScript Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- JavaScript สำหรับระบบ Drag and Drop และเปลี่ยนชื่อไฟล์ -->
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('file');
+        const dropZoneText = dropZone.querySelector('.fw-medium');
+        const fileAlert = document.getElementById('fileAlert');
+        const printForm = document.getElementById('printForm');
+
+        // ตรวจจับการลากไฟล์เข้ามาวาง
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('dragover');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('dragover');
+            }, false);
+        });
+
+        // เมื่อปล่อยไฟล์ลงในโซน
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if(files.length > 0) {
+                fileInput.files = files;
+                updateFileName();
+            }
+        });
+
+        printForm.addEventListener('submit', function (e) {
+            if (!fileInput.files || fileInput.files.length === 0) {
+                e.preventDefault();
+                fileAlert.classList.remove('d-none');
+                fileAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+                fileAlert.classList.add('d-none');
+            }
+        });
+
+        // อัปเดตข้อความบนหน้าจอเมื่อมีไฟล์ถูกเลือก
+        function updateFileName() {
+            if (fileInput.files.length > 0) {
+                const fileName = fileInput.files[0].name;
+                dropZoneText.innerHTML = `📄 ไฟล์ที่เลือก: <strong class="text-success">${fileName}</strong>`;
+                fileAlert.classList.add('d-none');
+            }
+        }
+    </script>
+    <script>
+        // Update printer status display below the select
+        const printerSelect = document.getElementById('printer');
+        const printerStatusText = document.getElementById('printerStatusText');
+        const printerInkLevelText = document.getElementById('printerInkLevelText');
+
+        function updatePrinterStatus() {
+            if (!printerSelect || !printerStatusText || !printerInkLevelText) return;
+            const opt = printerSelect.options[printerSelect.selectedIndex];
+            const status = opt ? opt.getAttribute('data-status') : '';
+            const inkLevel = opt ? opt.getAttribute('data-ink-level') : '';
+            const normalizedStatus = (status || '').toLowerCase().trim();
+
+            let statusClass = 'status-unknown';
+            let displayStatus = 'ไม่ทราบ';
+            let inkClass = 'ink-level-unknown';
+            let displayInkLevel = 'ไม่ทราบ';
+
+            if (normalizedStatus.includes('idle') || normalizedStatus.includes('ready') || normalizedStatus.includes('available') || normalizedStatus.includes('พร้อม') || normalizedStatus.includes('online')) {
+                statusClass = 'status-ready';
+                displayStatus = 'พร้อมใช้งาน';
+            } else if (normalizedStatus.includes('printing') || normalizedStatus.includes('พิมพ์') || normalizedStatus.includes('processing')) {
+                statusClass = 'status-printing';
+                displayStatus = 'กำลังพิมพ์';
+            } else if (status) {
+                displayStatus = status;
+            }
+
+            const normalizedInk = (inkLevel || '').toLowerCase().trim();
+            if (normalizedInk.includes('ไม่ทราบ')) {
+                inkClass = 'ink-level-unknown';
+                displayInkLevel = 'ไม่ทราบ';
+            } else if (normalizedInk.includes('สี') || normalizedInk.includes('color') || normalizedInk.includes('colour')) {
+                displayInkLevel = inkLevel;
+                const hasLowLevel = /\b(0|[1-9]\d?)%/.test(inkLevel) && /\b(0|[1-9]\d?)%/.test(inkLevel) && inkLevel.includes('0%');
+                if (hasLowLevel) {
+                    inkClass = 'ink-level-empty';
+                } else if (inkLevel.includes('%')) {
+                    inkClass = 'ink-level-normal';
+                }
+            } else if (inkLevel) {
+                displayInkLevel = inkLevel;
+            }
+
+            printerStatusText.className = `fw-semibold ${statusClass}`;
+            printerStatusText.textContent = displayStatus;
+            printerInkLevelText.className = `fw-semibold ${inkClass}`;
+            printerInkLevelText.textContent = displayInkLevel;
+        }
+
+        if (printerSelect) {
+            printerSelect.addEventListener('change', updatePrinterStatus);
+            // Initialize status on page load
+            updatePrinterStatus();
+        }
+    </script>
+</body>
+</html>
