@@ -37,7 +37,7 @@
 - ทดสอบเปิดโปรแกรมด้วย Gunicorn:
 
       cd ~/web-printerPi
-      gunicorn --bind 0.0.0.0:8000 webPrinterPi:app
+      ./venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 webPrinterPi:app
   * หากเปิดโปรแกรมสำเร็จให้ทำการกด Ctrl+C เพื่อออกจากโปรแกรม
 - สร้างเซอร์วิส systemctl สำหรับการเปิดโปรแกรมอัตโนมัติเมืื่อ Raspberry Pi บูตระบบเสร็จ:
 
