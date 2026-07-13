@@ -1,46 +1,12 @@
 import os
 import re
 import subprocess
-from pathlib import Path
-from flask import Flask, jsonify, render_template, request, redirect, flash
-from werkzeug.utils import secure_filename
+from flask import Flask, render_template, request, redirect, flash, jsonify
 
 app = Flask(__name__)
-app.secret_key = os.environ.get('WEB_PRINTERPI_SECRET_KEY', 'supersecretkey_for_sun')
-UPLOAD_FOLDER = Path.home() / 'web-printerPi' / 'uploads'
-UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
-app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # จำกัด 16MB
-ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt', 'doc', 'docx'}
-
-
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-def unique_filename(directory: Path, filename: str) -> Path:
-    target = directory / filename
-    if not target.exists():
-        return target
-    stem = target.stem
-    suffix = target.suffix
-    counter = 1
-    while True:
-        candidate = directory / f"{stem}_{counter}{suffix}"
-        if not candidate.exists():
-            return candidate
-        counter += 1
-
-
-def save_upload_file(file):
-    filename = secure_filename(file.filename)
-    if not filename:
-        raise ValueError('ชื่อไฟล์ไม่ถูกต้อง')
-    if not allowed_file(filename):
-        raise ValueError('ไฟล์ประเภทนี้ไม่รองรับ')
-    filepath = unique_filename(Path(app.config['UPLOAD_FOLDER']), filename)
-    file.save(str(filepath))
-    return filepath
+app.secret_key = "supersecretkey_for_sun"
+UPLOAD_FOLDER = os.path.expanduser('~/web-printerPi/uploads')
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
 def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality):
@@ -105,23 +71,25 @@ def parse_job_progress(detail_output, queue_output=""):
     return None
 
 
-def parse_printer_problem(line, detail_output, queue_output=""):
-    combined = "\n".join([part for part in [line, detail_output, queue_output] if part]).lower()
-    problem_patterns = [
-        ('กระดาษหมด', ['out of paper', 'paper out', 'no paper', 'paper empty', 'paper depleted']),
-        ('กระดาษติด', ['paper jam', 'paper jammed', 'jammed', 'stuck paper']),
-        ('หมึกหมด', ['no toner', 'toner empty', 'ink empty', 'out of ink']),
-        ('หมึกต่ำ', ['toner low', 'ink low', 'low toner', 'low ink']),
-        ('ฝาเปิด', ['door open', 'cover open']),
-        ('เครื่องพิมพ์ออฟไลน์', ['offline', 'not connected', 'not responding']),
-        ('เครื่องพิมพ์ถูกหยุดชั่วคราว', ['paused', 'disabled', 'not accepting jobs', 'stopped']),
-        ('ต้องการบริการ', ['service requested', 'service required', 'maintenance required']),
-    ]
-    for message, keywords in problem_patterns:
-        if any(keyword in combined for keyword in keywords):
-            level = 'danger' if message not in ['หมึกต่ำ'] else 'warning'
-            return message, level
-    return None, None
+def parse_current_job(printer_name):
+    job_id = None
+    job_filename = None
+
+    try:
+        lpstat_output = subprocess.check_output(["lpstat", "-o", printer_name]).decode("utf-8", "ignore")
+        for line in lpstat_output.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            parts = re.split(r'\s+', line, maxsplit=3)
+            if len(parts) >= 4:
+                job_id = parts[0]
+                job_filename = parts[3].strip()
+                return job_id, job_filename
+    except Exception:
+        pass
+
+    return job_id, job_filename
 
 
 def parse_printer_status(line, detail_output, queue_output=""):
@@ -136,9 +104,9 @@ def parse_printer_status(line, detail_output, queue_output=""):
         status = "รอคิว"
     elif job_state == "completed":
         status = "เสร็จสิ้น"
-    elif "is idle" in lower_line or "accepting jobs" in lower_line:
+    elif "is idle" in lower_line or "accepting jobs" in lower_line or "idle" in lower_line or "อยู่นิ่ง" in lower_line:
         status = "พร้อมใช้งาน"
-    elif "printing" in lower_line or "busy" in lower_line or "processing" in lower_line or "active" in lower_queue:
+    elif "printing" in lower_line or "busy" in lower_line or "processing" in lower_line or "active" in lower_queue or "กำลังพิมพ์" in lower_queue:
         status = "กำลังพิมพ์"
     else:
         status = "ไม่ทราบ"
@@ -174,8 +142,7 @@ def parse_printer_status(line, detail_output, queue_output=""):
         ink_level = f"{color_text} | {bw_text}"
 
     job_progress = parse_job_progress(detail_output, queue_output)
-    problem_message, status_level = parse_printer_problem(line, detail_output, queue_output)
-    return status, ink_level, job_progress, job_state_label, problem_message, status_level
+    return status, ink_level, job_progress, job_state_label
 
 
 def get_printers():
@@ -183,28 +150,36 @@ def get_printers():
         output = subprocess.check_output(["lpstat", "-p"]).decode("utf-8")
         printers = []
         for line in output.split("\n"):
-            if "printer" in line:
-                printer_name = line.split("printer ")[1].split(" ")[0].strip()
-                try:
-                    detail_output = subprocess.check_output(["lpstat", "-l", "-p", printer_name]).decode("utf-8", "ignore")
-                except Exception:
-                    detail_output = ""
+            line = line.strip()
+            if not line:
+                continue
 
-                try:
-                    queue_output = subprocess.check_output(["lpq", "-P", printer_name], stderr=subprocess.STDOUT).decode("utf-8", "ignore")
-                except Exception:
-                    queue_output = ""
+            match = re.search(r"(?:printer|เครื่องพิมพ์)\s+(\S+)", line, re.IGNORECASE)
+            if not match:
+                continue
 
-                status, ink_level, job_progress, job_state_label, problem_message, status_level = parse_printer_status(line, detail_output, queue_output)
-                printers.append({
-                    "name": printer_name,
-                    "status": status,
-                    "ink_level": ink_level,
-                    "job_progress": job_progress,
-                    "job_state_label": job_state_label,
-                    "problem_message": problem_message,
-                    "status_level": status_level,
-                })
+            printer_name = match.group(1).strip()
+            try:
+                detail_output = subprocess.check_output(["lpstat", "-l", "-p", printer_name]).decode("utf-8", "ignore")
+            except Exception:
+                detail_output = ""
+
+            try:
+                queue_output = subprocess.check_output(["lpq", "-P", printer_name], stderr=subprocess.STDOUT).decode("utf-8", "ignore")
+            except Exception:
+                queue_output = ""
+
+            status, ink_level, job_progress, job_state_label = parse_printer_status(line, detail_output, queue_output)
+            job_id, job_filename = parse_current_job(printer_name)
+            printers.append({
+                "name": printer_name,
+                "status": status,
+                "ink_level": ink_level,
+                "job_progress": job_progress,
+                "job_state_label": job_state_label,
+                "job_id": job_id,
+                "job_filename": job_filename,
+            })
         return printers
     except Exception:
         return []
@@ -241,32 +216,20 @@ def index():
         if copies < 1:
             copies = 1
 
-        if not selected_printer:
-            flash('กรุณาเลือกเครื่องพิมพ์', 'warning')
+        if file and selected_printer:
+            filename = file.filename
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            file.save(filepath)
+
+            try:
+                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality)
+                subprocess.run(command, check=True)
+                mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
+                flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
+            except subprocess.CalledProcessError:
+                flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
+
             return redirect(request.url)
-
-        filename = file.filename
-        filepath = None
-        try:
-            filepath = save_upload_file(file)
-            command = build_print_command(selected_printer, str(filepath), print_mode, copies, paper_size, print_quality)
-            subprocess.run(command, check=True)
-            mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
-            flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
-        except ValueError as err:
-            flash(str(err), 'warning')
-        except subprocess.CalledProcessError:
-            flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
-        except OSError:
-            flash('เกิดข้อผิดพลาด: ไม่สามารถบันทึกหรือส่งไฟล์ได้', 'danger')
-        finally:
-            if filepath is not None and os.path.exists(str(filepath)):
-                try:
-                    os.remove(str(filepath))
-                except OSError:
-                    pass
-
-        return redirect(request.url)
 
     return render_template('index.html', printers=printers)
 
