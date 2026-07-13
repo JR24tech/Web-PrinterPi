@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-from flask import Flask, render_template, request, redirect, flash
+from flask import Flask, render_template, request, redirect, flash, jsonify
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey_for_sun"
@@ -30,23 +30,69 @@ def build_print_command(printer_name, filepath, print_mode, copies, paper_size, 
     command.append(filepath)
     return command
 
-def parse_printer_status(line, detail_output):
+def parse_job_status(detail_output, queue_output=""):
+    combined_output = "\n".join([part for part in [detail_output, queue_output] if part])
+    if not combined_output:
+        return None, None
+
+    lower_output = combined_output.lower()
+    if any(keyword in lower_output for keyword in ["completed", "finished", "done"]):
+        return "completed", "เสร็จสิ้น"
+    if any(keyword in lower_output for keyword in ["active", "job-printing", "printing", "processing", "busy"]):
+        return "printing", "กำลังพิมพ์"
+    if any(keyword in lower_output for keyword in ["pending", "queued", "waiting", "held"]):
+        return "queued", "รอคิว"
+    return None, None
+
+
+def parse_job_progress(detail_output, queue_output=""):
+    combined_output = "\n".join([part for part in [detail_output, queue_output] if part])
+    if not combined_output:
+        return None
+
+    for line in combined_output.splitlines():
+        lower_line = line.lower()
+        if not any(keyword in lower_line for keyword in ["percent", "progress", "completed", "processed", "printed", "remaining", "job", "print"]):
+            continue
+
+        if any(keyword in lower_line for keyword in ["color", "colour", "black", "toner", "ink", "cyan", "magenta", "yellow"]):
+            continue
+
+        if "%" not in line:
+            continue
+
+        match = re.search(r"(\d{1,3})%", line)
+        if not match:
+            continue
+
+        value = int(match.group(1))
+        if 0 <= value <= 100:
+            return value
+
+    return None
+
+
+def parse_printer_status(line, detail_output, queue_output=""):
     lower_line = line.lower()
     lower_detail = detail_output.lower()
+    lower_queue = queue_output.lower()
 
-    if "is idle" in lower_line or "accepting jobs" in lower_line:
+    job_state, job_state_label = parse_job_status(detail_output, queue_output)
+    if job_state == "printing":
+        status = "กำลังพิมพ์"
+    elif job_state == "queued":
+        status = "รอคิว"
+    elif job_state == "completed":
+        status = "เสร็จสิ้น"
+    elif "is idle" in lower_line or "accepting jobs" in lower_line:
         status = "พร้อมใช้งาน"
-    elif "printing" in lower_line or "busy" in lower_line or "processing" in lower_line:
+    elif "printing" in lower_line or "busy" in lower_line or "processing" in lower_line or "active" in lower_queue:
         status = "กำลังพิมพ์"
     else:
         status = "ไม่ทราบ"
 
     color_percent = None
     bw_percent = None
-
-    for token in ["color", "colour", "cyan", "magenta", "yellow", "black", "toner", "ink"]:
-        if token in lower_detail:
-            pass
 
     if "color" in lower_detail or "colour" in lower_detail:
         color_match = None
@@ -75,7 +121,8 @@ def parse_printer_status(line, detail_output):
         bw_text = f"ขาวดำ {bw_percent}%" if bw_percent is not None else "ขาวดำ ไม่ทราบ"
         ink_level = f"{color_text} | {bw_text}"
 
-    return status, ink_level
+    job_progress = parse_job_progress(detail_output, queue_output)
+    return status, ink_level, job_progress, job_state_label
 
 
 def get_printers():
@@ -89,11 +136,22 @@ def get_printers():
                     detail_output = subprocess.check_output(["lpstat", "-l", "-p", printer_name]).decode("utf-8", "ignore")
                 except Exception:
                     detail_output = ""
-                status, ink_level = parse_printer_status(line, detail_output)
-                printers.append({"name": printer_name, "status": status, "ink_level": ink_level})
+
+                try:
+                    queue_output = subprocess.check_output(["lpq", "-P", printer_name], stderr=subprocess.STDOUT).decode("utf-8", "ignore")
+                except Exception:
+                    queue_output = ""
+
+                status, ink_level, job_progress, job_state_label = parse_printer_status(line, detail_output, queue_output)
+                printers.append({"name": printer_name, "status": status, "ink_level": ink_level, "job_progress": job_progress, "job_state_label": job_state_label})
         return printers
     except Exception:
         return []
+
+@app.route('/api/printers')
+def api_printers():
+    return jsonify(get_printers())
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():

@@ -154,7 +154,7 @@
                                 <select class="form-select printer-option compact-control" name="printer" id="printer" required>
                                     {% if printers %}
                                         {% for printer in printers %}
-                                            <option value="{{ printer.name }}" data-status="{{ printer.status }}" data-ink-level="{{ printer.ink_level }}">
+                                            <option value="{{ printer.name }}" data-status="{{ printer.status }}" data-ink-level="{{ printer.ink_level }}" data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}" data-job-state-label="{{ printer.job_state_label or '' }}">
                                                 🖨️ {{ printer.name }}
                                             </option>
                                         {% endfor %}
@@ -165,6 +165,15 @@
 
                                 <div id="printerStatus" class="text-muted small mt-1">
                                     <div>สถานะ: <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span></div>
+                                    <div id="printerProgressWrap" class="mt-2 d-none">
+                                        <div class="d-flex justify-content-between align-items-center mb-1">
+                                            <span>ความคืบหน้างานพิมพ์:</span>
+                                            <span id="printerProgressText" class="fw-semibold">0%</span>
+                                        </div>
+                                        <div class="progress" style="height: 6px;">
+                                            <div id="printerProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100"></div>
+                                        </div>
+                                    </div>
                                     <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText" class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
                                 </div>
                             </div>
@@ -224,8 +233,8 @@
                 </div>
 
                 <div class="text-center mt-3">
-                    <p class="text-secondary small mb-0">Web-PrinterPi version 1.0 - Develop by JR24 tech</p>
-                    <p class="text-secondary small mb-0">Powered by Raspberry Pi • Tailscale • OpenPrinting CUPS</p>
+                    <p class="text-secondary small mb-0">Web-PrinterPi 1.0 - Developed by JR24 tech</p>
+                    <p class="text-secondary small mb-0">Powered by Raspberry Pi • OpenPrinting CUPS • Tailscale</p>
                 </div>
 
             </div>
@@ -292,18 +301,75 @@
         const printerSelect = document.getElementById('printer');
         const printerStatusText = document.getElementById('printerStatusText');
         const printerInkLevelText = document.getElementById('printerInkLevelText');
+        const printerProgressWrap = document.getElementById('printerProgressWrap');
+        const printerProgressText = document.getElementById('printerProgressText');
+        const printerProgressBar = document.getElementById('printerProgressBar');
+
+        function renderPrinterOptions(printers) {
+            if (!printerSelect) return;
+
+            const currentValue = printerSelect.value || '';
+            printerSelect.innerHTML = '';
+
+            if (printers && printers.length > 0) {
+                printers.forEach((printer) => {
+                    const option = document.createElement('option');
+                    option.value = printer.name;
+                    option.setAttribute('data-status', printer.status || '');
+                    option.setAttribute('data-ink-level', printer.ink_level || '');
+                    option.setAttribute('data-job-progress', printer.job_progress != null ? String(printer.job_progress) : '');
+                    option.textContent = `🖨️ ${printer.name}`;
+                    if (printer.name === currentValue) {
+                        option.selected = true;
+                    }
+                    printerSelect.appendChild(option);
+                });
+            } else {
+                const option = document.createElement('option');
+                option.value = '';
+                option.disabled = true;
+                option.selected = true;
+                option.textContent = '❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS';
+                printerSelect.appendChild(option);
+            }
+
+            if (!printerSelect.value && printerSelect.options.length > 0) {
+                printerSelect.options[0].selected = true;
+            }
+
+            updatePrinterStatus();
+        }
+
+        async function refreshPrinterStatus() {
+            try {
+                const response = await fetch('/api/printers');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch printer status');
+                }
+                const printers = await response.json();
+                renderPrinterOptions(printers);
+            } catch (error) {
+                console.error('Unable to refresh printer status:', error);
+            }
+        }
 
         function updatePrinterStatus() {
             if (!printerSelect || !printerStatusText || !printerInkLevelText) return;
             const opt = printerSelect.options[printerSelect.selectedIndex];
             const status = opt ? opt.getAttribute('data-status') : '';
             const inkLevel = opt ? opt.getAttribute('data-ink-level') : '';
+            const rawJobProgress = opt ? opt.getAttribute('data-job-progress') : '';
+            const jobStateLabel = opt ? opt.getAttribute('data-job-state-label') : '';
             const normalizedStatus = (status || '').toLowerCase().trim();
+            const jobProgressValue = Number.parseInt(rawJobProgress, 10);
 
             let statusClass = 'status-unknown';
             let displayStatus = 'ไม่ทราบ';
             let inkClass = 'ink-level-unknown';
             let displayInkLevel = 'ไม่ทราบ';
+            let progressVisible = false;
+            let progressPercent = 0;
+            let progressText = 'ไม่ทราบ';
 
             if (normalizedStatus.includes('idle') || normalizedStatus.includes('ready') || normalizedStatus.includes('available') || normalizedStatus.includes('พร้อม') || normalizedStatus.includes('online')) {
                 statusClass = 'status-ready';
@@ -331,16 +397,42 @@
                 displayInkLevel = inkLevel;
             }
 
+            if (!Number.isNaN(jobProgressValue) && jobProgressValue >= 0 && jobProgressValue <= 100) {
+                progressVisible = true;
+                progressPercent = jobProgressValue;
+                progressText = `${jobProgressValue}%`;
+            } else if (jobStateLabel) {
+                progressVisible = false;
+                if (jobStateLabel === 'กำลังพิมพ์') {
+                    displayStatus = 'กำลังพิมพ์';
+                } else if (jobStateLabel === 'รอคิว') {
+                    displayStatus = 'รอคิว';
+                } else if (jobStateLabel === 'เสร็จสิ้น') {
+                    displayStatus = 'เสร็จสิ้น';
+                }
+            }
+
             printerStatusText.className = `fw-semibold ${statusClass}`;
             printerStatusText.textContent = displayStatus;
             printerInkLevelText.className = `fw-semibold ${inkClass}`;
             printerInkLevelText.textContent = displayInkLevel;
+
+            if (printerProgressWrap) {
+                printerProgressWrap.classList.toggle('d-none', !progressVisible);
+            }
+            if (printerProgressText) {
+                printerProgressText.textContent = progressText;
+            }
+            if (printerProgressBar) {
+                printerProgressBar.style.width = `${progressPercent}%`;
+                printerProgressBar.setAttribute('aria-valuenow', String(progressPercent));
+            }
         }
 
         if (printerSelect) {
             printerSelect.addEventListener('change', updatePrinterStatus);
-            // Initialize status on page load
-            updatePrinterStatus();
+            refreshPrinterStatus();
+            window.setInterval(refreshPrinterStatus, 3000);
         }
     </script>
 </body>
