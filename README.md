@@ -31,7 +31,39 @@
 
        cd ~/web-printerPi
        python3 webPrinterPi.py
-  * หากโปรแกรมรันสำเร็จให้ทำการกด Ctrl+C เพื่อออกจากโปรแกรม
+  * หากเปิดโปรแกรมสำเร็จให้ทำการกด Ctrl+C เพื่อออกจากโปรแกรม
 
 ## 🛠️ การตั้งค่าสำหรับการรันโปรแกรมอัตโนมัติหลังจากบูตระบบ Raspberry Pi:
+- ทดสอบเปิดโปรแกรมด้วย Gunicorn:
 
+      cd ~/web-printerPi
+      gunicorn --bind 0.0.0.0:8000 webPrinterPi:app
+  * หากเปิดโปรแกรมสำเร็จให้ทำการกด Ctrl+C เพื่อออกจากโปรแกรม
+- สร้างเซอร์วิส systemctl สำหรับการเปิดโปรแกรมอัตโนมัติเมืื่อ Raspberry Pi บูตระบบเสร็จ:
+
+      sudo nano /etc/systemd/system/webprinterpi.service
+- เพิ่มค่า Config นี้ลงไป (แก้ User, WorkingDirectory และ ExecStart ให้ตรงกับ path ในเครื่อง):
+
+      [Unit]
+      Description=Gunicorn instance to serve Web-PrinterPi
+      After=network.target
+
+      [Service]
+      User=pi
+      Group=www-data
+      WorkingDirectory=/home/pi/Web-PrinterPi
+      ExecStart=/home/pi/web-printerPi/venv/bin/gunicorn --workers 4 --bind 0.0.0.0:5000 webPrinterPi:app
+
+      [Install]
+      WantedBy=multi-user.target
+- ทำการรีเฟรชค่าความจำของเซอร์วิส systemctl:
+
+      sudo systemctl daemon-reload
+
+- ทำการรีสตาร์ทเซอร์วิส Web-PrinterPi:
+
+      sudo systemctl restart webprinterpi
+- สร้างการทำงานอัตโนมัติทันทีเมื่อ Rasppberry Pi บูตระบบเสร็จ:
+
+      sudo systemctl enable webprinterpi
+  
