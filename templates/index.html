@@ -110,19 +110,6 @@
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
                 
-                <!-- ส่วนแสดง Alert Message -->
-                {% with messages = get_flashed_messages(with_categories=true) %}
-                  {% if messages %}
-                    {% for category, message in messages %}
-                      <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-4" role="alert">
-                        <i class="bi {% if category == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
-                        {{ message }}
-                        <button type="button" class="btn-close" data-Distributed-dismiss="alert" aria-label="Close" onclick="this.parentElement.remove();"></button>
-                      </div>
-                    {% endfor %}
-                  {% endif %}
-                {% endwith %}
-
                 <!-- บัตรควบคุมหลัก (Main Card) -->
                 <div class="card main-card p-3 p-sm-4 bg-white">
                     <div class="text-center mb-3">
@@ -176,6 +163,27 @@
                                     </div>
                                     <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText" class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
                                 </div>
+
+                                <!-- ส่วนแสดง Flash Messages (ย้ายมาด้านล่างของระดับหมึก) -->
+                                <div id="flashPanel" class="mt-2 mb-3">
+                                    {% with messages = get_flashed_messages(with_categories=true) %}
+                                        {% if messages %}
+                                            {% for category, message in messages %}
+                                                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm mb-2" role="alert">
+                                                    <i class="bi {% if category == 'success' %}bi-check-circle-fill{% else %}bi-exclamation-triangle-fill{% endif %} me-2"></i>
+                                                    {{ message }}
+                                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                    {% endwith %}
+                                </div>
+                                <!-- ส่วนแสดงสถานะของการอัปโหลด / การสั่งพิมพ์ -->
+                                <div id="statusPanel" class="d-none mb-2 border rounded p-3 bg-light shadow-sm">
+                                        <div id="statusMessage" class="fw-semibold text-dark"></div>
+                                        <div id="statusSubtext" class="small text-muted mt-1"></div>
+                                </div>
+
                             </div>
                         </div>
 
@@ -220,10 +228,6 @@
                             </div>
                         </div>
 
-                        <div id="fileAlert" class="alert alert-warning d-none mt-2" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill me-2"></i> โปรดอัปโหลดไฟล์ก่อนกดสั่งพิมพ์
-                        </div>
-
                         <!-- ปุ่มส่งพิมพ์ -->
                         <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm mt-2 compact-btn">
                             <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
@@ -249,8 +253,26 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('file');
         const dropZoneText = dropZone.querySelector('.fw-medium');
-        const fileAlert = document.getElementById('fileAlert');
+        const statusPanel = document.getElementById('statusPanel');
+        const statusMessage = document.getElementById('statusMessage');
+        const statusSubtext = document.getElementById('statusSubtext');
         const printForm = document.getElementById('printForm');
+
+        function showStatus(message, type = 'info', subtext = '') {
+            if (!statusPanel || !statusMessage || !statusSubtext) return;
+            statusMessage.textContent = message;
+            statusSubtext.textContent = subtext;
+            statusPanel.classList.remove('d-none');
+            statusPanel.classList.toggle('border-success', type === 'success');
+            statusPanel.classList.toggle('border-warning', type === 'warning');
+            statusPanel.classList.toggle('border-danger', type === 'danger');
+            statusPanel.classList.toggle('border-info', type === 'info');
+        }
+
+        function hideStatus() {
+            if (!statusPanel) return;
+            statusPanel.classList.add('d-none');
+        }
 
         // ตรวจจับการลากไฟล์เข้ามาวาง
         ['dragenter', 'dragover'].forEach(eventName => {
@@ -280,10 +302,10 @@
         printForm.addEventListener('submit', function (e) {
             if (!fileInput.files || fileInput.files.length === 0) {
                 e.preventDefault();
-                fileAlert.classList.remove('d-none');
-                fileAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                showStatus('กรุณาเลือกไฟล์ก่อนกดสั่งพิมพ์', 'warning', 'คลิกหรือวางไฟล์ลงในพื้นที่ด้านบนเพื่อเลือกไฟล์สำหรับพิมพ์');
+                statusPanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
             } else {
-                fileAlert.classList.add('d-none');
+                hideStatus();
             }
         });
 
@@ -292,7 +314,7 @@
             if (fileInput.files.length > 0) {
                 const fileName = fileInput.files[0].name;
                 dropZoneText.innerHTML = `📄 ไฟล์ที่เลือก: <strong class="text-success">${fileName}</strong>`;
-                fileAlert.classList.add('d-none');
+                hideStatus();
             }
         }
     </script>
@@ -318,6 +340,9 @@
                     option.setAttribute('data-status', printer.status || '');
                     option.setAttribute('data-ink-level', printer.ink_level || '');
                     option.setAttribute('data-job-progress', printer.job_progress != null ? String(printer.job_progress) : '');
+                    option.setAttribute('data-job-state-label', printer.job_state_label || '');
+                    option.setAttribute('data-problem-message', printer.problem_message || '');
+                    option.setAttribute('data-status-level', printer.status_level || 'warning');
                     option.textContent = `🖨️ ${printer.name}`;
                     if (printer.name === currentValue) {
                         option.selected = true;
@@ -397,6 +422,9 @@
                 displayInkLevel = inkLevel;
             }
 
+            const problemMessage = opt ? opt.getAttribute('data-problem-message') : '';
+            const problemLevel = opt ? opt.getAttribute('data-status-level') : 'warning';
+
             if (!Number.isNaN(jobProgressValue) && jobProgressValue >= 0 && jobProgressValue <= 100) {
                 progressVisible = true;
                 progressPercent = jobProgressValue;
@@ -410,6 +438,12 @@
                 } else if (jobStateLabel === 'เสร็จสิ้น') {
                     displayStatus = 'เสร็จสิ้น';
                 }
+            }
+
+            if (problemMessage) {
+                showStatus(problemMessage, problemLevel, 'ตรวจสอบปัญหาของเครื่องพิมพ์');
+            } else {
+                hideStatus();
             }
 
             printerStatusText.className = `fw-semibold ${statusClass}`;

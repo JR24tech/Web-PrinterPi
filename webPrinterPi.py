@@ -1,13 +1,46 @@
 import os
 import re
 import subprocess
-from flask import Flask, render_template, request, redirect, flash, jsonify
+from pathlib import Path
+from flask import Flask, jsonify, render_template, request, redirect, flash
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey_for_sun"
-UPLOAD_FOLDER = os.path.expanduser('~/web-printerPi/uploads')
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 # จำกัด 16MB
+app.secret_key = os.environ.get('WEB_PRINTERPI_SECRET_KEY', 'supersecretkey_for_sun')
+UPLOAD_FOLDER = Path.home() / 'web-printerPi' / 'uploads'
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
+app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # จำกัด 16MB
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'gif', 'txt', 'doc', 'docx'}
+
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def unique_filename(directory: Path, filename: str) -> Path:
+    target = directory / filename
+    if not target.exists():
+        return target
+    stem = target.stem
+    suffix = target.suffix
+    counter = 1
+    while True:
+        candidate = directory / f"{stem}_{counter}{suffix}"
+        if not candidate.exists():
+            return candidate
+        counter += 1
+
+
+def save_upload_file(file):
+    filename = secure_filename(file.filename)
+    if not filename:
+        raise ValueError('ชื่อไฟล์ไม่ถูกต้อง')
+    if not allowed_file(filename):
+        raise ValueError('ไฟล์ประเภทนี้ไม่รองรับ')
+    filepath = unique_filename(Path(app.config['UPLOAD_FOLDER']), filename)
+    file.save(str(filepath))
+    return filepath
 
 
 def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality):
@@ -72,6 +105,25 @@ def parse_job_progress(detail_output, queue_output=""):
     return None
 
 
+def parse_printer_problem(line, detail_output, queue_output=""):
+    combined = "\n".join([part for part in [line, detail_output, queue_output] if part]).lower()
+    problem_patterns = [
+        ('กระดาษหมด', ['out of paper', 'paper out', 'no paper', 'paper empty', 'paper depleted']),
+        ('กระดาษติด', ['paper jam', 'paper jammed', 'jammed', 'stuck paper']),
+        ('หมึกหมด', ['no toner', 'toner empty', 'ink empty', 'out of ink']),
+        ('หมึกต่ำ', ['toner low', 'ink low', 'low toner', 'low ink']),
+        ('ฝาเปิด', ['door open', 'cover open']),
+        ('เครื่องพิมพ์ออฟไลน์', ['offline', 'not connected', 'not responding']),
+        ('เครื่องพิมพ์ถูกหยุดชั่วคราว', ['paused', 'disabled', 'not accepting jobs', 'stopped']),
+        ('ต้องการบริการ', ['service requested', 'service required', 'maintenance required']),
+    ]
+    for message, keywords in problem_patterns:
+        if any(keyword in combined for keyword in keywords):
+            level = 'danger' if message not in ['หมึกต่ำ'] else 'warning'
+            return message, level
+    return None, None
+
+
 def parse_printer_status(line, detail_output, queue_output=""):
     lower_line = line.lower()
     lower_detail = detail_output.lower()
@@ -122,7 +174,8 @@ def parse_printer_status(line, detail_output, queue_output=""):
         ink_level = f"{color_text} | {bw_text}"
 
     job_progress = parse_job_progress(detail_output, queue_output)
-    return status, ink_level, job_progress, job_state_label
+    problem_message, status_level = parse_printer_problem(line, detail_output, queue_output)
+    return status, ink_level, job_progress, job_state_label, problem_message, status_level
 
 
 def get_printers():
@@ -142,8 +195,16 @@ def get_printers():
                 except Exception:
                     queue_output = ""
 
-                status, ink_level, job_progress, job_state_label = parse_printer_status(line, detail_output, queue_output)
-                printers.append({"name": printer_name, "status": status, "ink_level": ink_level, "job_progress": job_progress, "job_state_label": job_state_label})
+                status, ink_level, job_progress, job_state_label, problem_message, status_level = parse_printer_status(line, detail_output, queue_output)
+                printers.append({
+                    "name": printer_name,
+                    "status": status,
+                    "ink_level": ink_level,
+                    "job_progress": job_progress,
+                    "job_state_label": job_state_label,
+                    "problem_message": problem_message,
+                    "status_level": status_level,
+                })
         return printers
     except Exception:
         return []
@@ -180,23 +241,32 @@ def index():
         if copies < 1:
             copies = 1
 
-        if file and selected_printer:
-            filename = file.filename
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-            file.save(filepath)
-
-            try:
-                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality)
-                subprocess.run(command, check=True)
-                mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
-                flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
-            except subprocess.CalledProcessError:
-                flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
-            finally:
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-
+        if not selected_printer:
+            flash('กรุณาเลือกเครื่องพิมพ์', 'warning')
             return redirect(request.url)
+
+        filename = file.filename
+        filepath = None
+        try:
+            filepath = save_upload_file(file)
+            command = build_print_command(selected_printer, str(filepath), print_mode, copies, paper_size, print_quality)
+            subprocess.run(command, check=True)
+            mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
+            flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
+        except ValueError as err:
+            flash(str(err), 'warning')
+        except subprocess.CalledProcessError:
+            flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
+        except OSError:
+            flash('เกิดข้อผิดพลาด: ไม่สามารถบันทึกหรือส่งไฟล์ได้', 'danger')
+        finally:
+            if filepath is not None and os.path.exists(str(filepath)):
+                try:
+                    os.remove(str(filepath))
+                except OSError:
+                    pass
+
+        return redirect(request.url)
 
     return render_template('index.html', printers=printers)
 
