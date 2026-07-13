@@ -1,9 +1,11 @@
 # Web-PrinterPi 🖨️✨
-โปรเจกต์ทำเว็บเซอร์วิสสั่งพิมพ์งานผ่าน Raspberry Pi ควบคุมง่ายๆ ด้วย Flask และจัดการเครื่องพิมพ์ผ่าน OpenCUPS Printing
+โปรเจกต์ Web Service สำหรับสั่งพิมพ์งานผ่าน Raspberry Pi สะดวก รวดเร็ว ควบคุมง่ายๆ ด้วย Flask และจัดการคิวพิมพ์ผ่าน CUPS Printing System
 ## 📦 สิ่งที่ต้องมี:
-  - OpenCUPS Printing - สำหรับเชื่อมต่อและจัดการเครื่องพิมพ์ https://github.com/OpenPrinting/cups
-  - Tailscale - สำหรับใช้งาน VPN สั่งพิมพ์นอกเครือข่ายภายในบ้าน https://github.com/tailscale/tailscale
+  * **CUPS (Common Unix Printing System):** สำหรับเชื่อมต่อและจัดการไดรเวอร์เครื่องพิมพ์  
+  👉 [ดูรายละเอียดเพิ่มเติมและวิธีติดตั้ง (OpenPrinting CUPS)](https://github.com/OpenPrinting/cups)
 
+* **Tailscale:** สำหรับทำ Secure VPN ส่วนตัว ช่วยให้คุณสั่งพิมพ์เอกสารจากนอกเครือข่าย WiFi บ้านได้ปลอดภัยโดยไม่ต้องเปิด Port Forwarding  
+  👉 [ดูรายละเอียดเพิ่มเติมและวิธีใช้งาน (Tailscale)](https://github.com/tailscale/tailscale)
 ## 🛠️ การติดตั้ง:
 - อัปเดตระบบและติดตั้งแพ็กเกจที่จำเป็น (Flask, Gunicorn, และ CUPS)
 
