@@ -107,3 +107,5 @@
    Bash:
 
       sudo systemctl status webprinterpi
+
+## **📦 การใช้งานโปรแกรม:**
