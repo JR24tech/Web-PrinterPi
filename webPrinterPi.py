@@ -2,12 +2,47 @@ import os
 import re
 import subprocess
 from flask import Flask, render_template, request, redirect, flash, jsonify # type: ignore
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey_for_sun"
 UPLOAD_FOLDER = os.path.expanduser('~/web-printerPi/uploads')
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
+# กำหนดนามสกุลไฟล์ที่อนุญาตให้อัปโหลดเพื่อความปลอดภัย[span_0](start_span)[span_0](end_span)
+ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'txt', 'doc', 'docx'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def convert_to_pdf_if_needed(filepath):
+    """
+    ตรวจสอบว่าเป็นไฟล์ doc หรือ docx หรือไม่ 
+    ถ้าใช่ จะแปลงเป็น PDF ด้วย LibreOffice ก่อนสั่งพิมพ์[span_1](start_span)[span_1](end_span)
+    """
+    ext = filepath.rsplit('.', 1)[1].lower()
+    if ext in ['doc', 'docx']:
+        pdf_dir = os.path.dirname(filepath)
+        try:
+            # ใช้ libreoffice แปลงไฟล์เป็น PDF แบบ Headless[span_2](start_span)[span_2](end_span)
+            subprocess.run(
+                ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", pdf_dir, filepath],
+                check=True,
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
+            base_name = os.path.splitext(os.path.basename(filepath))[0]
+            pdf_path = os.path.join(pdf_dir, f"{base_name}.pdf")
+            
+            # ลบไฟล์ doc/docx เดิมทิ้ง[span_3](start_span)[span_3](end_span)
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                
+            return pdf_path
+        except subprocess.CalledProcessError:
+            return filepath
+    return filepath
 
 def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality):
     command = ["lp", "-d", printer_name]
@@ -43,7 +78,6 @@ def parse_job_status(detail_output, queue_output=""):
         return "queued", "รอคิว"
     return None, None
 
-
 def parse_job_progress(detail_output, queue_output=""):
     combined_output = "\n".join([part for part in [detail_output, queue_output] if part])
     if not combined_output:
@@ -70,7 +104,6 @@ def parse_job_progress(detail_output, queue_output=""):
 
     return None
 
-
 def parse_current_job(printer_name):
     job_id = None
     job_filename = None
@@ -90,7 +123,6 @@ def parse_current_job(printer_name):
         pass
 
     return job_id, job_filename
-
 
 def parse_printer_status(line, detail_output, queue_output=""):
     lower_line = line.lower()
@@ -144,7 +176,6 @@ def parse_printer_status(line, detail_output, queue_output=""):
     job_progress = parse_job_progress(detail_output, queue_output)
     return status, ink_level, job_progress, job_state_label
 
-
 def get_printers():
     try:
         output = subprocess.check_output(["lpstat", "-p"]).decode("utf-8")
@@ -188,7 +219,6 @@ def get_printers():
 def api_printers():
     return jsonify(get_printers())
 
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     printers = get_printers()
@@ -208,6 +238,10 @@ def index():
             flash('กรุณาเลือกไฟล์ก่อนกดสั่งพิมพ์', 'warning')
             return redirect(request.url)
 
+        if not allowed_file(file.filename):
+            flash('นามสกุลไฟล์ไม่อนุญาตให้อัปโหลด', 'danger')
+            return redirect(request.url)
+
         try:
             copies = int(copies_value)
         except ValueError:
@@ -217,17 +251,27 @@ def index():
             copies = 1
 
         if file and selected_printer:
-            filename = file.filename
+            filename = secure_filename(file.filename)
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
+
+            # --- แปลงไฟล์เป็น PDF ก่อนสั่งพิมพ์[span_4](start_span)[span_4](end_span) ---
+            filepath = convert_to_pdf_if_needed(filepath)
+            print_filename = os.path.basename(filepath)
 
             try:
                 command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality)
                 subprocess.run(command, check=True)
                 mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
-                flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
+                flash(f'สำเร็จ! ส่งไฟล์ "{print_filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แล้ว', 'success')
             except subprocess.CalledProcessError:
                 flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
+            finally:
+                if os.path.exists(filepath):
+                    try:
+                        os.remove(filepath)
+                    except Exception:
+                        pass
 
             return redirect(request.url)
 

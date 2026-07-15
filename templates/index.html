@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="th">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,18 +18,20 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    
+
     <style>
         body {
             background: linear-gradient(135deg, #e0eafc 0%, #cfdef3 100%);
             min-height: 100vh;
             font-size: 0.95rem;
         }
+
         .main-card {
             border: none;
             border-radius: 14px;
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
+
         .drop-zone {
             border: 1px dashed #0d6efd;
             border-radius: 10px;
@@ -38,38 +41,48 @@
             cursor: pointer;
             transition: all 0.2s ease;
         }
-        .drop-zone:hover, .drop-zone.dragover {
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
             background-color: #eef3ff;
             border-color: #0a58ca;
         }
+
         .printer-option {
             font-size: 0.9rem;
         }
+
         .compact-label {
             font-size: 0.9rem;
             margin-bottom: 0.35rem;
             color: #0d6efd !important;
             font-weight: 700;
         }
+
         .compact-label i {
             color: #0d6efd;
         }
+
         .compact-control {
             padding: 0.5rem 0.7rem;
             font-size: 0.92rem;
         }
+
         .compact-option {
             padding: 0.55rem 0.7rem;
         }
+
         .compact-btn {
             padding: 0.7rem 1rem;
             font-size: 0.95rem;
         }
+
         /* Highlight selected print mode option */
         .compact-option {
             border: none !important;
             padding: 0.15rem;
         }
+
         .compact-option .form-check-label {
             display: block;
             padding: 0.55rem 0.7rem;
@@ -77,48 +90,89 @@
             border: 1px solid transparent;
             transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
         }
+
         .compact-option .form-check-input {
             margin-right: 0.5rem;
         }
-        .compact-option .form-check-input:checked + .form-check-label {
+
+        .compact-option .form-check-input:checked+.form-check-label {
             background-color: #e7f1ff;
             border-color: #0a58ca;
-            box-shadow: 0 4px 10px rgba(10,88,202,0.08);
+            box-shadow: 0 4px 10px rgba(10, 88, 202, 0.08);
             color: #0a58ca;
         }
+
         .status-ready {
             color: #198754;
         }
+
         .status-printing {
             color: #fd7e14;
         }
+
         .status-unknown {
             color: #dc3545;
         }
+
         .ink-level-normal {
             color: #198754;
         }
+
         .ink-level-low {
             color: #fd7e14;
         }
+
         .ink-level-empty {
             color: #dc3545;
         }
+
         .ink-level-unknown {
             color: #6c757d;
         }
+
         .ink-level-text {
             display: inline-block;
             margin-top: 0.15rem;
         }
+
+        .upload-container {
+            display: flex;
+            gap: 15px;
+            align-items: flex-start;
+        }
+
+        .drop-zone {
+            flex: 1;
+            /* ให้ Drop zone ยืดหยุ่น */
+        }
+
+        #filePreview {
+            width: 120px;
+            height: 120px;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            display: none;
+            /* ซ่อนไว้ก่อนตอนยังไม่มีไฟล์ */
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+            overflow: hidden;
+        }
+
+        #filePreview img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: cover;
+        }
     </style>
 </head>
+
 <body class="d-flex align-items-center py-3">
 
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-md-8 col-lg-6">
-                
+
                 <!-- บัตรควบคุมหลัก (Main Card) -->
                 <div class="card main-card p-3 p-sm-4 bg-white">
                     <div class="text-center mb-3">
@@ -126,73 +180,100 @@
                             <i class="bi bi-printer-fill"></i>
                         </div>
                         <h3 class="fw-bold text-primary mb-1">Web PrinterPi</h3>
+                        <p class="text-secondary-emphasis mb-1">ระบบสั่งพิมพ์เอกสารผ่านเครือข่าย VPN</p>
                     </div>
 
+                    <!-- เริ่มฟอร์มที่นี่ และปิดที่ท้ายสุด -->
                     <form method="POST" enctype="multipart/form-data" id="printForm">
-                        
+
                         <div class="row g-2 mb-3">
                             <div class="mb-4">
-                            
-                            <div class="drop-zone" id="dropZone" onclick="document.getElementById('file').click()">
-                                <i class="bi bi-cloud-arrow-up text-primary display-6 mb-2 d-block"></i>
-                                <span class="fw-medium text-dark d-block" id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></span>
-                                <span class="text-muted small d-block mt-1">รองรับ PDF, รูปภาพ และเอกสารทั่วไป</span>
-
-                                <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3" role="status">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <i class="bi bi-cloud-arrow-up-fill"></i>
-                                            <span id="uploadProgressLabelText">อัปโหลดไฟล์</span>
+                                <div class="row g-2 mb-4 align-items-stretch">
+                                    <!-- ฝั่งซ้าย: Drop Zone -->
+                                    <div class="col" id="dropZoneContainer">
+                                        <div class="drop-zone h-100 p-4 rounded-3 bg-white shadow-sm position-relative d-flex flex-column align-items-center justify-content-center text-center"
+                                            id="dropZone" onclick="document.getElementById('file').click()"
+                                            style="cursor: pointer; border: 2px dashed #0d6efd; min-height: 150px; transition: all 0.2s;">
+                                            <i class="bi bi-cloud-arrow-up text-primary display-6 mb-2"></i>
+                                            <span class="fw-medium text-dark d-block"
+                                                id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ
+                                                <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></span>
+                                            <span class="text-muted small d-block mt-1" id="dropZoneSubText">รองรับ PDF,
+                                                รูปภาพ และเอกสารทั่วไป</span>
                                         </div>
-                                        <span id="uploadProgressLabel" class="fw-semibold">0%</span>
                                     </div>
-                                    <div class="progress" style="height: 10px;">
-                                        <div id="uploadProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100"></div>
+
+                                    <!-- ฝั่งขวา: Preview Area -->
+                                    <div class="col-auto" id="previewContainer" style="display: none;">
+                                        <div id="filePreview"
+                                            class="border shadow-sm rounded p-1 d-flex align-items-center justify-content-center bg-white"
+                                            style="width: 120px; height: 100%; min-height: 150px; border: 1px solid #cbd5e1; overflow: hidden;">
+                                            <i id="fileIcon" class="bi bi-file-earmark-text text-secondary"
+                                                style="font-size: 2.5rem; display: none;"></i>
+                                            <img id="imgPreview" src="#" alt="Preview"
+                                                style="max-width: 100%; max-height: 100%; display: none; object-fit: contain;">
+                                            <canvas id="pdfPreviewCanvas"
+                                                style="max-width: 100%; max-height: 100%; display: none;"></canvas>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            
-                            <!-- ซ่อน Input ดั้งเดิมไว้ แล้วใช้ตัว Drop Zone ควบคุมแทน -->
-                            <input type="file" name="file" id="file" class="d-none" required onchange="updateFileName()">
+
+                            <!-- ซ่อน Input ไว้ในฟอร์ม -->
+                            <input type="file" name="file" id="file" class="d-none" required
+                                accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx" onchange="updateFileName()">
                         </div>
-                            <div class="mb-4">
-                                <label for="printer" class="form-label fw-bold text-primary compact-label">
-                                    <i class="bi bi-hdd-network-fill me-1"></i> เลือกเครื่องพิมพ์
-                                </label>
-                                <select class="form-select printer-option compact-control" name="printer" id="printer" required>
-                                    {% if printers %}
-                                        {% for printer in printers %}
-                                            <option value="{{ printer.name }}" data-status="{{ printer.status }}" data-ink-level="{{ printer.ink_level }}" data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}" data-job-state-label="{{ printer.job_state_label or '' }}" data-job-id="{{ printer.job_id or '' }}" data-job-filename="{{ printer.job_filename or '' }}">
-                                                🖨️ {{ printer.name }}
-                                            </option>
-                                        {% endfor %}
-                                    {% else %}
-                                        <option value="" disabled selected>❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS</option>
-                                    {% endif %}
-                                </select>
+                        <div class="mb-4">
+                            <label for="printer" class="form-label fw-bold text-primary compact-label">
+                                <i class="bi bi-hdd-network-fill me-1"></i> เลือกเครื่องพิมพ์
+                            </label>
+                            <select class="form-select printer-option compact-control" name="printer" id="printer"
+                                required>
+                                {% if printers %}
+                                {% for printer in printers %}
+                                <option value="{{ printer.name }}" data-status="{{ printer.status }}"
+                                    data-ink-level="{{ printer.ink_level }}"
+                                    data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}"
+                                    data-job-state-label="{{ printer.job_state_label or '' }}"
+                                    data-job-id="{{ printer.job_id or '' }}"
+                                    data-job-filename="{{ printer.job_filename or '' }}">
+                                    🖨️ {{ printer.name }}
+                                </option>
+                                {% endfor %}
+                                {% else %}
+                                <option value="" disabled selected>❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS</option>
+                                {% endif %}
+                            </select>
 
-                                <div id="printerStatus" class="text-muted small mt-1">
-                                    <div>สถานะ: <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span></div>
-                                    <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText" class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
-                                    <div id="printerProgressWrap" class="mt-2 d-none">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span>ความคืบหน้างานพิมพ์:</span>
-                                            <span id="printerProgressText" class="fw-semibold">0%</span>
-                                        </div>
-                                        <div class="progress" style="height: 6px;">
-                                            <div id="printerProgressBar" class="progress-bar bg-info" role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100"></div>
+                            <div id="printerStatus" class="text-muted small mt-1">
+                                <div>สถานะ: <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span></div>
+                                <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText"
+                                        class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
+                                <div id="printerProgressWrap" class="mt-2 d-none">
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span>ความคืบหน้างานพิมพ์:</span>
+                                        <span id="printerProgressText" class="fw-semibold">0%</span>
+                                    </div>
+                                    <div class="progress" style="height: 6px;">
+                                        <div id="printerProgressBar" class="progress-bar bg-info" role="progressbar"
+                                            style="width: 0%" aria-valuemin="0" aria-valuemax="100">
                                         </div>
                                     </div>
                                 </div>
-                                <div id="formAlert" class="alert alert-warning d-none mt-3" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
-                                </div>
                             </div>
+
+                            <div id="formAlert" class="alert alert-warning d-none mt-3" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
+                            </div>
+                            
                         </div>
 
                         <div class="mb-3">
-                            <button class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center" type="button" data-bs-toggle="collapse" data-bs-target="#printSettings" aria-expanded="false" aria-controls="printSettings">
+                            <button
+                                class="btn btn-outline-primary w-100 d-flex justify-content-between align-items-center"
+                                type="button" data-bs-toggle="collapse" data-bs-target="#printSettings"
+                                aria-expanded="false" aria-controls="printSettings">
                                 <span><i class="bi bi-gear-fill me-2"></i> การตั้งค่าการพิมพ์</span>
                                 <i class="bi bi-chevron-down"></i>
                             </button>
@@ -201,39 +282,39 @@
                                     <div class="card-body p-3">
                                         <div class="row g-3">
                                             <div class="col-md-4">
-                                                <label for="paper_size" class="form-label fw-bold text-primary compact-label">
+                                                <label for="paper_size"
+                                                    class="form-label fw-bold text-primary compact-label">
                                                     <i class="bi bi-file-earmark-text me-1"></i> ขนาดกระดาษ
                                                 </label>
-                                                <select class="form-select compact-control" name="paper_size" id="paper_size">
+                                                <select class="form-select compact-control" name="paper_size"
+                                                    id="paper_size">
                                                     <option value="A4" selected>A4</option>
                                                     <option value="Letter">Letter</option>
                                                     <option value="Legal">Legal</option>
                                                 </select>
                                             </div>
-                                             <div class="col-md-4">
-                                                <label for="print_mode" class="form-label fw-bold text-primary compact-label">
+                                            <div class="col-md-4">
+                                                <label for="print_mode"
+                                                    class="form-label fw-bold text-primary compact-label">
                                                     <i class="bi bi-palette-fill me-1"></i> โหมดการพิมพ์
                                                 </label>
-                                                <select class="form-select compact-control" name="print_mode" id="print_mode">
+                                                <select class="form-select compact-control" name="print_mode"
+                                                    id="print_mode">
                                                     <option value="color" selected>สี</option>
                                                     <option value="bw">ขาวดำ</option>
                                                 </select>
                                             </div>
                                             <div class="col-md-4">
-                                                <label for="print_quality" class="form-label fw-bold text-primary compact-label">
+                                                <label for="print_quality"
+                                                    class="form-label fw-bold text-primary compact-label">
                                                     <i class="bi bi-speedometer2 me-1"></i> คุณภาพการพิมพ์
                                                 </label>
-                                                <select class="form-select compact-control" name="print_quality" id="print_quality">
+                                                <select class="form-select compact-control" name="print_quality"
+                                                    id="print_quality">
                                                     <option value="draft">ร่าง</option>
                                                     <option value="normal" selected>ทั่วไป</option>
                                                     <option value="high">สูง</option>
                                                 </select>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <label for="copies" class="form-label fw-bold text-primary compact-label">
-                                                    <i class="bi bi-copy me-1"></i> จำนวนชุด
-                                                </label>
-                                                <input type="number" class="form-control compact-control" name="copies" id="copies" min="1" max="100" value="1" required>
                                             </div>
                                         </div>
                                     </div>
@@ -241,22 +322,52 @@
                             </div>
                         </div>
 
-                        <!-- ปุ่มส่งพิมพ์ -->
-                        <button type="submit" class="btn btn-primary w-100 fw-bold shadow-sm mt-2 compact-btn" id="printActionButton">
-                            <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
-                        </button>
+                       <!-- ปุ่มส่งพิมพ์ -->
+<div class="d-flex justify-content-center align-items-end gap-3">
+    <div class="col-md-2">
+        <label for="copies" class="form-label fw-bold text-primary compact-label">
+            <i class="bi bi-copy me-1"></i> จำนวนชุด
+        </label>
+        <input type="number" class="form-control compact-control" name="copies"
+            id="copies" min="1" max="100" value="1" required>
+    </div>
+    <button type="submit" class="btn btn-primary w-40 fw-bold shadow-sm compact-btn"
+        id="printActionButton">
+        <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
+    </button>
+</div>
+
+                        <!-- Progress Area -->
+                        <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3 w-100" role="status">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                                    <span id="uploadProgressLabelText">อัปโหลดไฟล์</span>
+                                </div>
+                                <span id="uploadProgressLabel" class="fw-semibold">0%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div id="uploadProgressBar"
+                                    class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                    role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
                     </form>
 
                 </div>
 
                 <div class="text-center mt-3">
-                    <p class="text-secondary small mb-0">เวอร์ชั่น 1.1 | พัฒนาโดย 
-                        <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank" class="text-secondary text-decoration-none">JR24 tech</a>
+                    <p class="text-secondary small mb-0">เวอร์ชั่น 1.1 | พัฒนาโดย
+                        <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank"
+                            class="text-secondary text-decoration-none">JR24 tech</a>
                     </p>
-                    <p class="text-secondary small mb-0">Powered by 
-                        <a href="https://www.raspberrypi.com" target="_blank" class="text-secondary text-decoration-none">Raspberry Pi</a> • 
-                        <a href="https://openprinting.github.io/cups" target="_blank" class="text-secondary text-decoration-none">OpenPrinting CUPS</a> • 
-                        <a href="https://tailscale.com" target="_blank" class="text-secondary text-decoration-none">Tailscale</a>
+                    <p class="text-secondary small mb-0">Powered by
+                        <a href="https://www.raspberrypi.com" target="_blank"
+                            class="text-secondary text-decoration-none">Raspberry Pi</a> •
+                        <a href="https://openprinting.github.io/cups" target="_blank"
+                            class="text-secondary text-decoration-none">OpenPrinting CUPS</a> •
+                        <a href="https://tailscale.com" target="_blank"
+                            class="text-secondary text-decoration-none">Tailscale</a>
                     </p>
                 </div>
             </div>
@@ -265,7 +376,7 @@
 
     <!-- Bootstrap 5 JavaScript Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- JavaScript สำหรับระบบ Drag and Drop และเปลี่ยนชื่อไฟล์ -->
     <script>
         const dropZone = document.getElementById('dropZone');
@@ -407,21 +518,90 @@
             xhr.send(formData);
         });
 
-        // อัปเดตข้อความบนหน้าจอเมื่อมีไฟล์ถูกเลือก
-        function updateFileName() {
-            if (!fileInput || !fileInput.files) return;
+        // ฟังก์ชันล้างค่าไฟล์และคืนค่า UI
+        function clearSelectedFile(event) {
+            if (event) event.stopPropagation();
 
-            if (fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                if (dropZoneText) {
-                    dropZoneText.innerHTML = `📄 ไฟล์ที่เลือก: <strong class="text-success">${file.name}</strong>`;
-                }
-                if (formAlert) {
-                    formAlert.classList.add('d-none');
-                }
-            } else {
-                resetFileSelection();
+            const fileInput = document.getElementById('file');
+            const previewContainer = document.getElementById('previewContainer');
+            const imgPreview = document.getElementById('imgPreview');
+            const pdfCanvas = document.getElementById('pdfPreviewCanvas');
+            const fileIcon = document.getElementById('fileIcon');
+            const dropZoneText = document.getElementById('dropZoneText');
+            const dropZoneSubText = document.getElementById('dropZoneSubText');
+
+            // 1. ล้างไฟล์
+            if (fileInput) fileInput.value = '';
+
+            // 2. ซ่อนพรีวิวและ Container ฝั่งขวา เพื่อให้ Drop Zone ขยายเต็ม[span_3](start_span)[span_3](end_span)
+            if (previewContainer) previewContainer.style.display = 'none';
+            if (imgPreview) imgPreview.style.display = 'none';
+            if (pdfCanvas) pdfCanvas.style.display = 'none';
+            if (fileIcon) fileIcon.style.display = 'none';
+
+            // 3. คืนค่าข้อความเริ่มต้น[span_4](start_span)[span_4](end_span)
+            dropZoneText.innerHTML = 'ลากไฟล์มาวางที่นี่ หรือ <span class="text-primary">คลิกเพื่อเลือกไฟล์</span>';
+            dropZoneSubText.innerHTML = 'รองรับ PDF, รูปภาพ และเอกสารทั่วไป';
+        }
+
+        async function updateFileName() {
+            const fileInput = document.getElementById('file');
+            if (!fileInput || !fileInput.files.length) return;
+
+            const previewContainer = document.getElementById('previewContainer');
+            const imgPreview = document.getElementById('imgPreview');
+            const pdfCanvas = document.getElementById('pdfPreviewCanvas');
+            const fileIcon = document.getElementById('fileIcon');
+            const dropZoneText = document.getElementById('dropZoneText');
+            const dropZoneSubText = document.getElementById('dropZoneSubText');
+            const file = fileInput.files[0];
+
+            // แสดง Container ฝั่งขวา[span_5](start_span)[span_5](end_span)
+            previewContainer.style.display = 'block';
+
+            // Reset สถานะ
+            imgPreview.style.display = 'none';
+            pdfCanvas.style.display = 'none';
+            fileIcon.style.display = 'none';
+
+            const fileExtension = file.name.split('.').pop().toLowerCase();
+
+            // 1. รูปภาพ
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    imgPreview.src = e.target.result;
+                    imgPreview.style.display = 'block';
+                };
+                reader.readAsDataURL(file);
             }
+            // 2. PDF
+            else if (fileExtension === 'pdf') {
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    const pdfData = new Uint8Array(e.target.result);
+                    const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
+                    const page = await pdf.getPage(1);
+                    const viewport = page.getViewport({ scale: 0.2 });
+                    pdfCanvas.height = viewport.height;
+                    pdfCanvas.width = viewport.width;
+                    await page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport }).promise;
+                    pdfCanvas.style.display = 'block';
+                };
+                reader.readAsArrayBuffer(file);
+            }
+            // 3. เอกสาร (Doc, Docx, Txt)
+            else {
+                fileIcon.style.display = 'block';
+                fileIcon.className = (fileExtension === 'docx' || fileExtension === 'doc') ?
+                    'bi bi-file-earmark-word text-primary' : 'bi bi-file-earmark-text text-secondary';
+            }
+
+            // อัปเดต UI ให้มีปุ่มยกเลิก[span_6](start_span)[span_6](end_span)
+            dropZoneText.innerHTML = `📄 ไฟล์ที่เลือก: <strong class="text-success">${file.name}</strong>`;
+            dropZoneSubText.innerHTML = `<button type="button" class="btn btn-sm btn-outline-danger mt-2" onclick="clearSelectedFile(event)">
+        <i class="bi bi-x-circle"></i> ลบไฟล์ที่เลือก
+    </button>`;
         }
 
     </script>
@@ -575,8 +755,10 @@
         if (printerSelect) {
             printerSelect.addEventListener('change', updatePrinterStatus);
             refreshPrinterStatus();
-            window.setInterval(refreshPrinterStatus, 3000);
+            window.setInterval(refreshPrinterStatus, 5000);
         }
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </body>
+
 </html>
