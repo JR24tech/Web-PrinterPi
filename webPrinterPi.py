@@ -1,7 +1,7 @@
 import os
 import re
 import subprocess
-from flask import Flask, render_template, request, redirect, flash, jsonify
+from flask import Flask, render_template, request, redirect, flash, jsonify # type: ignore
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey_for_sun"
