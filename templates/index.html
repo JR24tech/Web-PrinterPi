@@ -18,6 +18,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        // กำหนด Worker source สำหรับ PDF.js
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
 
     <style>
         body {
@@ -295,6 +300,37 @@
                                                 </label>
                                                 <input type="number" class="form-control compact-control" name="copies"
                                                     id="copies" min="1" max="100" value="1" required>
+                                            </div>
+                                            <!-- แสดงตัวอย่างการตั้งค่าหน้ากระดาษ -->
+                                            <div class="col-12 mt-3">
+                                                <div
+                                                    class="p-3 bg-light rounded-3 border border-2 border-dashed text-center">
+                                                    <span class="small text-muted fw-bold d-block mb-2"><i
+                                                            class="bi bi-eye-fill me-1"></i>
+                                                        ตัวอย่างการตั้งค่าหน้ากระดาษ</span>
+                                                    <div class="d-inline-block bg-white shadow-sm rounded overflow-hidden position-relative"
+                                                        id="previewBox"
+                                                        style="width: 85px; height: 120px; border: 2px solid #0d6efd; display: flex; align-items: center; justify-content: center; margin: 0 auto; transition: all 0.3s ease;">
+                                                        <!-- ไอคอนเริ่มต้น (กรณีไม่ใช่รูปภาพ) -->
+                                                        <div id="previewIconContainer"
+                                                            style="display: flex; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%;">
+                                                            <div id="previewIcon"
+                                                                style="font-size: 1.5rem; color: #0d6efd;">
+                                                                <i class="bi bi-file-earmark-text"></i>
+                                                            </div>
+                                                        </div>
+                                                        <!-- แท็กสำหรับแสดงรูปพรีวิว (ซ่อนไว้ก่อนถ้าไม่ใช่รูป) -->
+                                                        <img id="previewImage" src="" alt="Preview"
+                                                            style="width: 100%; height: 100%; object-fit: cover; display: none;">
+
+                                                        <span id="previewPaperLabel"
+                                                            class="position-absolute bottom-0 start-50 translate-middle-x badge bg-primary"
+                                                            style="font-size: 0.6rem; margin-bottom: 4px; z-index: 2;">A4</span>
+                                                    </div>
+                                                    <div class="mt-2 small text-secondary" id="previewText">
+                                                        แนวตั้ง • สี • ทั่วไป
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -642,6 +678,144 @@
             printerSelect.addEventListener('change', updatePrinterStatus);
             refreshPrinterStatus();
             window.setInterval(refreshPrinterStatus, 3000);
+        }
+    </script>
+    <script>
+        // อัปเดตตัวอย่างการตั้งค่าแบบเรียลไทม์
+        const paperSizeSelect = document.getElementById('paper_size');
+        const orientationSelect = document.getElementById('orientation');
+        const printModeSelect = document.getElementById('print_mode');
+        const printQualitySelect = document.getElementById('print_quality');
+        const previewBox = document.getElementById('previewBox');
+        const previewPaperLabel = document.getElementById('previewPaperLabel');
+        const previewText = document.getElementById('previewText');
+
+        function updatePrintPreview() {
+            if (!paperSizeSelect || !orientationSelect || !previewBox) return;
+
+            const paper = paperSizeSelect.value;
+            const orientation = orientationSelect.value;
+            const mode = printModeSelect ? printModeSelect.value : 'color';
+            const quality = printQualitySelect ? printQualitySelect.options[printQualitySelect.selectedIndex].text : 'ทั่วไป';
+            const modeText = mode === 'color' ? 'สี' : 'ขาวดำ';
+
+            // ปรับสัดส่วนกล่องจำลองกระดาษตามแนวตั้ง/แนวนอน
+            if (orientation === 'landscape') {
+                previewBox.style.width = '120px';
+                previewBox.style.height = '85px';
+            } else {
+                previewBox.style.width = '85px';
+                previewBox.style.height = '120px';
+            }
+
+            previewPaperLabel.textContent = paper;
+            const orientText = orientation === 'landscape' ? 'แนวนอน (Landscape)' : 'แนวตั้ง (Portrait)';
+            previewText.textContent = `${orientText} • ${modeText} • ${quality}`;
+        }
+
+        [paperSizeSelect, orientationSelect, printModeSelect, printQualitySelect].forEach(element => {
+            if (element) {
+                element.addEventListener('change', updatePrintPreview);
+            }
+        });
+
+        // เรียกทำงานครั้งแรกตอนโหลดหน้าเว็บ
+        updatePrintPreview();
+
+        const previewImage = document.getElementById('previewImage');
+        const previewIconContainer = document.getElementById('previewIconContainer');
+
+        async function handleFilePreview() {
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                if (previewImage) {
+                    previewImage.style.display = 'none';
+                    previewImage.src = '';
+                }
+                if (previewIconContainer) previewIconContainer.style.display = 'flex';
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const fileType = file.type;
+
+            // 1. ถ้าเป็นไฟล์รูปภาพ (PNG, JPG)
+            if (fileType.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    if (previewImage) {
+                        previewImage.src = e.target.result;
+                        previewImage.style.display = 'block';
+                    }
+                    if (previewIconContainer) previewIconContainer.style.display = 'none';
+                };
+                reader.readAsDataURL(file);
+            }
+            // 2. ถ้าเป็นไฟล์ PDF ให้ใช้ PDF.js แปลงหน้าแรกมาทำพรีวิว
+            else if (file.name.toLowerCase().endsWith('.pdf') || fileType === 'application/pdf') {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                    const pdfDoc = await loadingTask.promise;
+                    const page = await pdfDoc.getPage(1); // ดึงหน้าแรกมาแสดง
+
+                    const viewport = page.getViewport({ scale: 0.5 });
+                    const canvas = document.createElement('canvas');
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+                    if (previewImage) {
+                        previewImage.src = canvas.toDataURL();
+                        previewImage.style.display = 'block';
+                    }
+                    if (previewIconContainer) {
+                        previewIconContainer.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.error('Error rendering PDF preview:', error);
+                    // ถ้าพรีวิว PDF ไม่ผ่าน ให้ fallback กลับไปแสดงไอคอน PDF ตามเดิม
+                    showDefaultFileIcon(file);
+                }
+            }
+            // 3. ไฟล์เอกสารอื่นๆ (Word, Excel ฯลฯ) แสดงเป็นไอคอน
+            else {
+                showDefaultFileIcon(file);
+            }
+        }
+
+        function showDefaultFileIcon(file) {
+            if (previewImage) previewImage.style.display = 'none';
+            if (previewIconContainer) {
+                previewIconContainer.style.display = 'flex';
+                const iconElement = previewIconContainer.querySelector('i');
+                if (iconElement) {
+                    if (file.name.endsWith('.pdf')) {
+                        iconElement.className = 'bi bi-file-earmark-pdf-fill text-danger';
+                    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+                        iconElement.className = 'bi bi-file-earmark-word-fill text-primary';
+                    } else {
+                        iconElement.className = 'bi bi-file-earmark-text-fill text-secondary';
+                    }
+                }
+            }
+        }
+
+        // ผูก Event ให้เรียกฟังก์ชันพรีวิวไฟล์ เมื่อมีการเลือกไฟล์ใหม่
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                updateFileName();
+                handleFilePreview();
+            });
+        }
+
+        // รองรับกรณีลากไฟล์มาวาง (Drop) ให้เรียกพรีวิวด้วย
+        if (dropZone) {
+            dropZone.addEventListener('drop', (e) => {
+                // หลังจากอัปเดตไฟล์ใน input แล้ว ให้รันพรีวิว
+                setTimeout(handleFilePreview, 50);
+            });
         }
     </script>
 </body>
