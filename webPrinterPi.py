@@ -9,7 +9,7 @@ UPLOAD_FOLDER = os.path.expanduser('~/web-printerPi/uploads')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
 
-def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality, orientation):
+def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality):
     command = ["lp", "-d", printer_name]
 
     if print_mode == "color":
@@ -22,14 +22,6 @@ def build_print_command(printer_name, filepath, print_mode, copies, paper_size, 
 
     if print_quality:
         command.extend(["-o", f"print-quality={print_quality}"])
-
-    if copies and copies > 1:
-        command.extend(["-n", str(copies)])
-
-    if orientation == "landscape":
-        command.extend(["-o", "landscape"])
-    else:
-        command.extend(["-o", "portrait"])
 
     if copies and copies > 1:
         command.extend(["-n", str(copies)])
@@ -211,7 +203,6 @@ def index():
         copies_value = request.form.get('copies', '1')
         paper_size = request.form.get('paper_size', 'A4')
         print_quality = request.form.get('print_quality', 'normal')
-        orientation = request.form.get('orientation', 'portrait')
 
         if file.filename == '':
             flash('กรุณาเลือกไฟล์ก่อนกดสั่งพิมพ์', 'warning')
@@ -231,7 +222,7 @@ def index():
             file.save(filepath)
 
             try:
-                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality, orientation)
+                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality)
                 subprocess.run(command, check=True)
                 mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
                 flash(f'สำเร็จ! ส่งไฟล์ "{filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แบบ{mode_label} ขนาด {paper_size} คุณภาพ {print_quality} จำนวน {copies} ชุด แล้ว', 'success')
