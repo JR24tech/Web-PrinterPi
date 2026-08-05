@@ -55,7 +55,7 @@
         .compact-label {
             font-size: 0.9rem;
             margin-bottom: 0.35rem;
-            color: #0d6efd !important;
+            color: #0d6efd;
             font-weight: 700;
         }
 
@@ -79,7 +79,7 @@
 
         /* Highlight selected print mode option */
         .compact-option {
-            border: none !important;
+            border: none;
             padding: 0.15rem;
         }
 
@@ -247,8 +247,6 @@
 
                             <div id="printerStatus" class="text-muted small mt-1">
                                 <div>สถานะ: <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span></div>
-                                <div class="mt-1">ระดับหมึก: <span id="printerInkLevelText"
-                                        class="fw-semibold ink-level-text">ไม่ทราบ</span></div>
                                 <div id="printerProgressWrap" class="mt-2 d-none">
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span>ความคืบหน้างานพิมพ์:</span>
@@ -266,7 +264,7 @@
                                 <i class="bi bi-exclamation-triangle-fill me-2"></i>
                                 <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
                             </div>
-                            
+
                         </div>
 
                         <div class="mb-3">
@@ -322,20 +320,20 @@
                             </div>
                         </div>
 
-                       <!-- ปุ่มส่งพิมพ์ -->
-<div class="d-flex justify-content-center align-items-end gap-3">
-    <div class="col-md-2">
-        <label for="copies" class="form-label fw-bold text-primary compact-label">
-            <i class="bi bi-copy me-1"></i> จำนวนชุด
-        </label>
-        <input type="number" class="form-control compact-control" name="copies"
-            id="copies" min="1" max="100" value="1" required>
-    </div>
-    <button type="submit" class="btn btn-primary w-40 fw-bold shadow-sm compact-btn"
-        id="printActionButton">
-        <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
-    </button>
-</div>
+                        <!-- ปุ่มส่งพิมพ์ -->
+                        <div class="d-flex justify-content-center align-items-end gap-3">
+                            <div class="col-md-2">
+                                <label for="copies" class="form-label fw-bold text-primary compact-label">
+                                    <i class="bi bi-copy me-1"></i> จำนวนชุด
+                                </label>
+                                <input type="number" class="form-control compact-control" name="copies" id="copies"
+                                    min="1" max="100" value="1" required>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-40 fw-bold shadow-sm compact-btn"
+                                id="printActionButton">
+                                <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
+                            </button>
+                        </div>
 
                         <!-- Progress Area -->
                         <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3 w-100" role="status">
@@ -666,7 +664,7 @@
         }
 
         function updatePrinterStatus() {
-            if (!printerSelect || !printerStatusText || !printerInkLevelText) return;
+            if (!printerSelect || !printerStatusText) return;
             const opt = printerSelect.options[printerSelect.selectedIndex];
             const status = opt ? opt.getAttribute('data-status') : '';
             const inkLevel = opt ? opt.getAttribute('data-ink-level') : '';
@@ -735,8 +733,10 @@
 
             printerStatusText.className = `fw-semibold ${statusClass}`;
             printerStatusText.textContent = displayStatus;
-            printerInkLevelText.className = `fw-semibold ${inkClass}`;
-            printerInkLevelText.textContent = displayInkLevel;
+            if (printerInkLevelText) {
+                printerInkLevelText.className = `fw-semibold ${inkClass}`;
+                printerInkLevelText.textContent = displayInkLevel;
+            }
 
             if (printerProgressWrap) {
                 printerProgressWrap.classList.toggle('d-none', !progressVisible);
