@@ -25,7 +25,6 @@ def convert_to_pdf_if_needed(filepath):
     if ext in ['doc', 'docx']:
         pdf_dir = os.path.dirname(filepath)
         try:
-            # ใช้ libreoffice แปลงไฟล์เป็น PDF แบบ Headless[span_2](start_span)[span_2](end_span)
             subprocess.run(
                 ["libreoffice", "--headless", "--convert-to", "pdf", "--outdir", pdf_dir, filepath],
                 check=True,
@@ -34,17 +33,68 @@ def convert_to_pdf_if_needed(filepath):
             )
             base_name = os.path.splitext(os.path.basename(filepath))[0]
             pdf_path = os.path.join(pdf_dir, f"{base_name}.pdf")
-            
-            # ลบไฟล์ doc/docx เดิมทิ้ง[span_3](start_span)[span_3](end_span)
+
             if os.path.exists(filepath):
                 os.remove(filepath)
-                
+
             return pdf_path
         except subprocess.CalledProcessError:
             return filepath
     return filepath
 
-def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality):
+
+def is_valid_pdf(filepath):
+    try:
+        with open(filepath, 'rb') as f:
+            header = f.read(1024)
+            header = header.lstrip()
+            if not header.startswith(b'%PDF'):
+                return False
+            f.seek(0, os.SEEK_END)
+            size = f.tell()
+            tail_size = min(1024, size)
+            f.seek(-tail_size, os.SEEK_END)
+            tail = f.read(tail_size)
+            return b'%%EOF' in tail
+    except Exception:
+        return False
+
+
+def normalize_pdf(filepath):
+    try:
+        pdf_dir = os.path.dirname(filepath)
+        base_name = os.path.splitext(os.path.basename(filepath))[0]
+        normalized_path = os.path.join(pdf_dir, f"{base_name}.normalized.pdf")
+        subprocess.run(
+            [
+                "gs",
+                "-q",
+                "-dNOPAUSE",
+                "-dBATCH",
+                "-sDEVICE=pdfwrite",
+                "-dCompatibilityLevel=1.4",
+                "-dPDFSETTINGS=/printer",
+                "-dAutoRotatePages=/PageByPage",
+                f"-sOutputFile={normalized_path}",
+                filepath,
+            ],
+            check=True,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        if os.path.exists(normalized_path):
+            try:
+                if os.path.exists(filepath) and filepath != normalized_path:
+                    os.remove(filepath)
+            except Exception:
+                pass
+            return normalized_path
+    except Exception:
+        pass
+    return filepath
+
+
+def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality, orientation=None):
     command = ["lp", "-d", printer_name]
 
     if print_mode == "color":
@@ -57,6 +107,12 @@ def build_print_command(printer_name, filepath, print_mode, copies, paper_size, 
 
     if print_quality:
         command.extend(["-o", f"print-quality={print_quality}"])
+
+    if orientation in ["portrait", "landscape"]:
+        value = "3" if orientation == "portrait" else "4"
+        command.extend(["-o", f"orientation-requested={value}"])
+
+    command.extend(["-o", "fit-to-page"])
 
     if copies and copies > 1:
         command.extend(["-n", str(copies)])
@@ -255,12 +311,22 @@ def index():
             filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
             file.save(filepath)
 
-            # --- แปลงไฟล์เป็น PDF ก่อนสั่งพิมพ์[span_4](start_span)[span_4](end_span) ---
-            filepath = convert_to_pdf_if_needed(filepath)
+            ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+            if ext == 'pdf':
+                if not is_valid_pdf(filepath):
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    flash('ไฟล์ PDF ไม่ถูกต้องหรืออาจเสียหาย กรุณาลองอีกครั้ง', 'danger')
+                    return redirect(request.url)
+                filepath = normalize_pdf(filepath)
+            elif ext in ['doc', 'docx']:
+                filepath = convert_to_pdf_if_needed(filepath)
+
             print_filename = os.path.basename(filepath)
+            orientation = request.form.get('orientation', 'portrait')
 
             try:
-                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality)
+                command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality, orientation)
                 subprocess.run(command, check=True)
                 mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
                 flash(f'สำเร็จ! ส่งไฟล์ "{print_filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แล้ว', 'success')
