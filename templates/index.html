@@ -217,31 +217,43 @@
             align-items: center;
             gap: 0.55rem;
             min-width: 170px;
+            padding: 0.85rem;
+            border-radius: 24px;
+            background: transparent;
+            box-shadow: none;
         }
 
         #filePreview {
             display: none;
             align-items: center;
             justify-content: center;
-            padding: 0.45rem;
-            border-radius: 18px;
-            background: linear-gradient(145deg, #ffffff 0%, #f5f9ff 100%);
-            border: 1px solid #dce8f8;
-            box-shadow: 0 16px 35px rgba(25, 42, 72, 0.12);
+            padding: 0.85rem;
+            border-radius: 20px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(13, 110, 253, 0.14);
+            box-shadow: 0 22px 40px rgba(15, 35, 66, 0.12);
             transition: all 0.25s ease;
         }
 
         .paper-sheet {
-            width: 150px;
-            height: 200px;
-            border-radius: 14px;
-            background: linear-gradient(180deg, #fffef8 0%, #fcfbf4 100%);
-            border: 1px solid #e7e3d8;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+            width: auto;
+            height: auto;
+            max-width: 320px;
+            max-height: 360px;
+            border-radius: 16px;
+            background: transparent;
+            border: none;
+            box-shadow: none;
             overflow: hidden;
             display: flex;
             flex-direction: column;
             flex-shrink: 0;
+            position: relative;
+        }
+
+        .paper-sheet::before,
+        .paper-sheet::after {
+            display: none;
         }
 
         .paper-content {
@@ -249,8 +261,8 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0.8rem;
-            background: #fcfbf7;
+            padding: 0;
+            background: transparent;
             position: relative;
         }
 
@@ -293,7 +305,7 @@
                             <i class="bi bi-printer-fill fs-4"></i>
                         </div>
                         <h3 class="fw-bold text-primary mb-1">Web PrinterPi</h3>
-                        <p class="text-secondary-emphasis mb-0">ระบบสั่งพิมพ์เอกสารผ่านเครือข่าย VPN แบบง่ายและรวดเร็ว</p>
+                        <p class="text-secondary-emphasis mb-0">ระบบสั่งพิมพ์เอกสารผ่านเครือข่าย VPN</p>
                     </div>
 
                     <!-- เริ่มฟอร์มที่นี่ และปิดที่ท้ายสุด -->
@@ -318,7 +330,7 @@
 
                                     <!-- ฝั่งขวา: Preview Area -->
                                     <div class="col-auto paper-preview-shell" id="previewContainer" style="display: none;">
-                                        <div id="filePreview" class="shadow-sm">
+                                        <div id="filePreview">
                                             <div class="paper-sheet">
                                                 <div class="paper-content">
                                                     <img id="imgPreview" src="#" alt="Preview" style="display: none;">
@@ -326,7 +338,7 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div id="previewOrientationLabel" class="preview-label text-center d-none">ตัวอย่างแนวพิมพ์: แนวตั้ง</div>
+                                        <div id="previewOrientationLabel" class="preview-label text-center d-none">ตัวอย่างก่อนพิมพ์</div>
                                     </div>
                                 </div>
                             </div>
@@ -696,14 +708,12 @@
             if (imgPreview) imgPreview.style.display = 'none';
             if (pdfCanvas) pdfCanvas.style.display = 'none';
             if (fileIcon) fileIcon.style.display = 'none';
-            if (previewOrientationLabel) {
-                previewOrientationLabel.classList.add('d-none');
-            }
 
             const fileExtension = file.name.split('.').pop().toLowerCase();
             const orientationText = orientationSelect ? orientationSelect.value : 'portrait';
             if (previewOrientationLabel) {
-                previewOrientationLabel.textContent = `ตัวอย่างแนวพิมพ์: ${orientationText === 'landscape' ? 'แนวนอน' : 'แนวตั้ง'}`;
+                previewOrientationLabel.textContent = 'ตัวอย่างก่อนพิมพ์';
+                previewOrientationLabel.classList.remove('d-none');
             }
 
             if (filePreview) {
@@ -737,16 +747,10 @@
                         await page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport }).promise;
                         pdfCanvas.style.display = 'block';
                         if (filePreview) filePreview.style.display = 'flex';
-                        if (previewOrientationLabel) {
-                            previewOrientationLabel.classList.remove('d-none');
-                        }
                     } catch (error) {
                         pdfCanvas.style.display = 'none';
                         fileIcon.style.display = 'block';
                         fileIcon.className = 'bi bi-file-earmark-pdf text-danger';
-                        if (previewOrientationLabel) {
-                            previewOrientationLabel.classList.add('d-none');
-                        }
                     }
                 };
                 reader.readAsArrayBuffer(file);
