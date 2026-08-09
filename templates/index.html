@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web-PrinterPi 1.2</title>
+    <title>Web-PrinterPi</title>
     <!-- Favicons & Apple Touch Icons -->
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
@@ -230,7 +230,7 @@
             padding: 0.85rem;
             border-radius: 20px;
             background: rgba(255, 255, 255, 0.92);
-            border: 1px solid rgba(13, 110, 253, 0.14);
+            border: 1px solid rgba(0, 0, 0, 0.500);
             box-shadow: 0 22px 40px rgba(15, 35, 66, 0.12);
             transition: all 0.25s ease;
         }
@@ -329,7 +329,8 @@
                                     </div>
 
                                     <!-- ฝั่งขวา: Preview Area -->
-                                    <div class="col-auto paper-preview-shell" id="previewContainer" style="display: none;">
+                                    <div class="col-auto paper-preview-shell" id="previewContainer"
+                                        style="display: none;">
                                         <div id="filePreview">
                                             <div class="paper-sheet">
                                                 <div class="paper-content">
@@ -338,7 +339,8 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div id="previewOrientationLabel" class="preview-label text-center d-none">ตัวอย่างก่อนพิมพ์</div>
+                                        <div id="previewOrientationLabel" class="preview-label text-center d-none">
+                                            ตัวอย่างก่อนพิมพ์</div>
                                     </div>
                                 </div>
                             </div>
@@ -400,13 +402,14 @@
                                 <i class="bi bi-chevron-down"></i>
                             </button>
                             <div class="collapse mt-3" id="printSettings">
-                                <div class="card border-0 shadow-sm" style="background: linear-gradient(145deg, #f8fbff 0%, #f1f6ff 100%);">
+                                <div class="card border-0 shadow-sm"
+                                    style="background: linear-gradient(145deg, #f8fbff 0%, #f1f6ff 100%);">
                                     <div class="card-body p-3">
                                         <div class="row g-3">
                                             <div class="col-md-3">
                                                 <label for="paper_size"
                                                     class="form-label fw-bold text-primary compact-label">
-                                                    <i class="bi bi-file-earmark-text me-1"></i> ขนาดกระดาษ
+                                                    <i class="bi bi-file-earmark-text me-1"></i> กระดาษ
                                                 </label>
                                                 <select class="form-select compact-control" name="paper_size"
                                                     id="paper_size">
@@ -418,7 +421,7 @@
                                             <div class="col-md-3">
                                                 <label for="print_mode"
                                                     class="form-label fw-bold text-primary compact-label">
-                                                    <i class="bi bi-palette-fill me-1"></i> โหมดการพิมพ์
+                                                    <i class="bi bi-palette-fill me-1"></i> โหมดสี
                                                 </label>
                                                 <select class="form-select compact-control" name="print_mode"
                                                     id="print_mode">
@@ -429,7 +432,7 @@
                                             <div class="col-md-3">
                                                 <label for="print_quality"
                                                     class="form-label fw-bold text-primary compact-label">
-                                                    <i class="bi bi-speedometer2 me-1"></i> คุณภาพการพิมพ์
+                                                    <i class="bi bi-speedometer2 me-1"></i> คุณภาพ
                                                 </label>
                                                 <select class="form-select compact-control" name="print_quality"
                                                     id="print_quality">
@@ -441,7 +444,7 @@
                                             <div class="col-md-3">
                                                 <label for="orientation"
                                                     class="form-label fw-bold text-primary compact-label">
-                                                    <i class="bi bi-arrow-left-right me-1"></i> แนวการพิมพ์
+                                                    <i class="bi bi-arrow-left-right me-1"></i> การจัดวาง
                                                 </label>
                                                 <select class="form-select compact-control" name="orientation"
                                                     id="orientation">
@@ -461,8 +464,10 @@
                                 <label for="copies" class="form-label fw-bold text-primary compact-label mb-1">
                                     <i class="bi bi-copy me-1"></i> จำนวนชุด
                                 </label>
-                                <input type="number" class="form-control compact-control" name="copies" id="copies"
-                                    min="1" max="100" value="1" required>
+                                <div class="col-5 col-sm-5">
+                                    <input type="number" class="form-control compact-control" name="copies" id="copies"
+                                        min="1" max="100" value="1" required>
+                                </div>
                             </div>
                             <div class="col-7 col-sm-8">
                                 <button type="submit" class="btn btn-primary fw-bold shadow-sm compact-btn w-100"
@@ -492,7 +497,7 @@
                 </div>
 
                 <div class="text-center mt-3">
-                    <p class="text-secondary small mb-0">เวอร์ชั่น 1.2 | พัฒนาโดย
+                    <p class="text-secondary small mb-0">เวอร์ชั่น 1.2.1 | พัฒนาโดย
                         <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank"
                             class="text-secondary text-decoration-none">JR24 tech</a>
                     </p>
@@ -675,7 +680,7 @@
             if (fileInput) fileInput.value = '';
 
             // 2. ซ่อนพรีวิวและ Container ฝั่งขวา เพื่อให้ Drop Zone ขยายเต็ม[span_3](start_span)[span_3](end_span)
-            if (previewContainer) previewContainer.style.display = 'none';            if (filePreview) filePreview.style.display = 'none';            if (imgPreview) imgPreview.style.display = 'none';
+            if (previewContainer) previewContainer.style.display = 'none'; if (filePreview) filePreview.style.display = 'none'; if (imgPreview) imgPreview.style.display = 'none';
             if (pdfCanvas) pdfCanvas.style.display = 'none';
             if (fileIcon) fileIcon.style.display = 'none';
             if (filePreview) filePreview.classList.remove('preview-landscape');
