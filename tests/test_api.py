@@ -13,3 +13,11 @@ def test_printers_api_returns_json():
     assert response.status_code == 200
     data = response.get_json()
     assert isinstance(data, list)
+
+
+def test_homepage_renders_print_preview():
+    client = app.test_client()
+    response = client.get('/')
+
+    assert response.status_code == 200
+    assert 'ตัวอย่างก่อนพิมพ์'.encode('utf-8') in response.data
