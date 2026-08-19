@@ -109,8 +109,12 @@ def build_print_command(printer_name, filepath, print_mode, copies, paper_size, 
         command.extend(["-o", f"print-quality={print_quality}"])
 
     if orientation in ["portrait", "landscape"]:
+        # CUPS accepts both the generic boolean form (landscape/portrait) and the
+        # IPP orientation-requested value. Some printer backends ignore one while
+        # honoring the other, so we include both for compatibility.
         value = "3" if orientation == "portrait" else "4"
         command.extend(["-o", f"orientation-requested={value}"])
+        command.extend(["-o", orientation])
 
     command.extend(["-o", "fit-to-page"])
 

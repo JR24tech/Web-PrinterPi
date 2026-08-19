@@ -460,6 +460,49 @@
             padding: 0.3rem 0.65rem;
         }
 
+        /* PDF navigation buttons */
+        .pdf-nav {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .pdf-nav-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+            border: 1px solid rgba(13,110,253,0.12);
+            background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
+            color: #0d6efd;
+            box-shadow: 0 6px 14px rgba(13,110,253,0.08);
+            transition: transform 0.12s ease, box-shadow 0.12s ease;
+        }
+
+        .pdf-nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(13,110,253,0.12);
+        }
+
+        .pdf-nav-btn:disabled {
+            opacity: 0.45;
+            transform: none;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .pdf-page-indicator {
+            font-size: 0.9rem;
+            color: #495f78;
+            font-weight: 600;
+            min-width: 96px;
+            text-align: center;
+        }
+
     </style>
 </head>
 
@@ -482,47 +525,8 @@
                     <!-- เริ่มฟอร์มที่นี่ และปิดที่ท้ายสุด -->
                     <form method="POST" enctype="multipart/form-data" id="printForm">
 
-                        <div class="section-card mb-3">
-                            <div class="section-title">
-                                <span><i class="bi bi-cloud-arrow-up-fill me-3"></i> อัปโหลดไฟล์</span>
-                            </div>
-                            <div class="upload-layout">
-                                <div class="upload-drop-panel" id="dropZoneContainer">
-                                    <div class="drop-zone h-100 p-4 rounded-3 position-relative"
-                                        id="dropZone" onclick="document.getElementById('file').click()"
-                                        style="cursor: pointer; border: 2px dashed #0d6efd; min-height: 220px; transition: all 0.2s;">
-                                        <div class="drop-zone-content">
-                                            <div class="drop-zone-icon-pill" id="dropZoneIcon">
-                                                <i class="bi bi-cloud-arrow-up"></i>
-                                            </div>
-                                            <div class="drop-zone-body">
-                                                <div class="fw-medium text-dark" id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ
-                                                    <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></div>
-                                                <div class="text-muted small mt-1" id="dropZoneSubText">รองรับ PDF,
-                                                    รูปภาพ และเอกสารทั่วไป</div>
-                                                <div class="drop-zone-actions" id="dropZoneActions"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
 
-                                <div class="file-preview-panel" id="previewContainer">
-                                    <div class="preview-label mb-2">ตัวอย่างก่อนพิมพ์</div>
-                                    <div class="paper-preview-shell" id="filePreview">
-                                        <div class="paper-sheet" id="paperSheet">
-                                            <img id="imgPreview" alt="ตัวอย่างภาพก่อนพิมพ์" />
-                                            <canvas id="pdfPreviewCanvas"></canvas>
-                                        </div>
-                                        <span id="previewOrientationLabel" class="preview-orientation badge rounded-pill bg-light text-primary d-none">แนวตั้ง</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <input type="file" name="file" id="file" class="d-none" required
-                                accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx" onchange="updateFileName()">
-                        </div>
-
-                        <div class="section-card mb-3">
+                                                <div class="section-card mb-3">
                             <div class="section-title">
                                 <span><i class="bi bi-hdd-network-fill me-2"></i> เลือกเครื่องพิมพ์</span>
                             </div>
@@ -571,6 +575,58 @@
                                     <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
                                 </div>
                             </div>
+                        </div>
+
+                        <div class="section-card mb-3">
+                            <div class="section-title">
+                                <span><i class="bi bi-cloud-arrow-up-fill me-3"></i> อัปโหลดไฟล์</span>
+                            </div>
+                            <div class="upload-layout">
+                                <div class="upload-drop-panel" id="dropZoneContainer">
+                                    <div class="drop-zone h-100 p-4 rounded-3 position-relative"
+                                        id="dropZone" onclick="document.getElementById('file').click()"
+                                        style="cursor: pointer; border: 2px dashed #0d6efd; min-height: 220px; transition: all 0.2s;">
+                                        <div class="drop-zone-content">
+                                            <div class="drop-zone-icon-pill" id="dropZoneIcon">
+                                                <i class="bi bi-cloud-arrow-up"></i>
+                                            </div>
+                                            <div class="drop-zone-body">
+                                                <div class="fw-medium text-dark" id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ
+                                                    <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></div>
+                                                <div class="text-muted small mt-1" id="dropZoneSubText">รองรับ PDF,
+                                                    รูปภาพ และเอกสารทั่วไป</div>
+                                                <div class="drop-zone-actions" id="dropZoneActions"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="file-preview-panel" id="previewContainer">
+                                    <div class="preview-label mb-2">ตัวอย่างก่อนพิมพ์</div>
+                                    <div class="paper-preview-shell" id="filePreview">
+                                        <div class="paper-sheet" id="paperSheet">
+                                            <img id="imgPreview" alt="ตัวอย่างภาพก่อนพิมพ์" />
+                                            <div id="pdfMainView" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                                                <canvas id="pdfPreviewCanvas"></canvas>
+                                            </div>
+                                        </div>
+
+                                        <!-- Thumbnails + show-all toggle -->
+                                        <div class="w-100 mt-2">
+                                            <div class="d-flex align-items-center justify-content-center mb-2 gap-3 pdf-nav">
+                                                <button id="pdfPrevBtn" type="button" class="pdf-nav-btn" disabled title="ย้อนกลับ"><i class="bi bi-chevron-left"></i></button>
+                                                <span id="pdfPageIndicator" class="pdf-page-indicator">หน้า 0 / 0</span>
+                                                <button id="pdfNextBtn" type="button" class="pdf-nav-btn" disabled title="ถัดไป"><i class="bi bi-chevron-right"></i></button>
+                                            </div>
+                                        </div>
+
+                                        <span id="previewOrientationLabel" class="preview-orientation badge rounded-pill bg-light text-primary d-none">แนวตั้ง</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <input type="file" name="file" id="file" class="d-none" required
+                                accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx" onchange="updateFileName()">
                         </div>
 
                         <div class="section-card mb-3">
@@ -638,7 +694,7 @@
                         <!-- ปุ่มส่งพิมพ์ -->
                         <div class="section-card mb-0">
                             <div class="row g-3 align-items-end">
-                                <div class="col-12 col-sm-4">
+                                <div class="col-12 col-sm-2">
                                     <label for="copies" class="form-label fw-bold text-primary compact-label mb-1">
                                         <i class="bi bi-copy me-1"></i> จำนวนชุด
                                     </label>
@@ -674,7 +730,7 @@
                 </div>
 
                 <div class="text-center mt-3">
-                    <p class="text-secondary small mb-0">เวอร์ชั่น 1.2.1 | พัฒนาโดย
+                    <p class="text-secondary small mb-0">Web PrinterPi 1.2.1 | Developed by
                         <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank"
                             class="text-secondary text-decoration-none">JR24 tech</a>
                     </p>
@@ -718,6 +774,45 @@
         const submitButton = printForm.querySelector('button[type="submit"]');
         let isUploadInProgress = false;
         let currentPrinterBusy = false;
+
+        // Helper to render a specific PDF page into the main preview canvas
+        async function renderPdfPage(pageNumber, scale = 1.0) {
+            if (!window._previewPdfDoc || !pdfCanvas) return;
+            try {
+                const pdf = window._previewPdfDoc;
+                const numPages = window._numPdfPages || pdf.numPages || 1;
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageNumber > numPages) pageNumber = numPages;
+
+                const page = await pdf.getPage(pageNumber);
+                const viewport = page.getViewport({ scale: scale });
+                // resize canvas to page size
+                pdfCanvas.width = viewport.width;
+                pdfCanvas.height = viewport.height;
+                const ctx = pdfCanvas.getContext('2d');
+                // clear previous content
+                ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+                await page.render({ canvasContext: ctx, viewport }).promise;
+                pdfCanvas.style.display = 'block';
+
+
+                // update global current page
+                window._currentPdfPage = pageNumber;
+
+
+                // update page indicator and prev/next state
+                const pageIndicator = document.getElementById('pdfPageIndicator');
+                const prevBtn = document.getElementById('pdfPrevBtn');
+                const nextBtn = document.getElementById('pdfNextBtn');
+                const total = window._numPdfPages || numPages;
+                if (pageIndicator) pageIndicator.textContent = `หน้า ${pageNumber} / ${total}`;
+                if (prevBtn) prevBtn.disabled = pageNumber <= 1;
+                if (nextBtn) nextBtn.disabled = pageNumber >= total;
+
+            } catch (err) {
+                console.error('renderPdfPage error', err);
+            }
+        }
 
         function formatFileSize(bytes) {
             const units = ['B', 'KB', 'MB', 'GB', 'TB'];
@@ -1013,20 +1108,46 @@
                 reader.onload = async (e) => {
                     const pdfData = new Uint8Array(e.target.result);
                     try {
+                        // Ensure worker is set
+                        if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
+                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        }
+
                         const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-                        const page = await pdf.getPage(1);
-                        const viewport = page.getViewport({ scale: 0.2 });
-                        if (pdfCanvas) {
-                            pdfCanvas.height = viewport.height;
-                            pdfCanvas.width = viewport.width;
-                            await page.render({ canvasContext: pdfCanvas.getContext('2d'), viewport }).promise;
-                            pdfCanvas.style.display = 'block';
-                        }
-                        if (previewOrientationLabel) {
-                            previewOrientationLabel.classList.remove('d-none');
-                        }
+                        // Keep a global reference for later page renders
+                        window._previewPdfDoc = pdf;
+
+                        const numPages = pdf.numPages || 1;
+                        // store global counts for navigation
+                        window._numPdfPages = numPages;
+                        window._currentPdfPage = 1;
+
+                        // Show first page in main canvas by default
+                        renderPdfPage(1, 1.0);
+
+                        // show orientation label
+                        if (previewOrientationLabel) previewOrientationLabel.classList.remove('d-none');
+
+                        // hook up prev/next buttons and page indicator
+                        const prevBtn = document.getElementById('pdfPrevBtn');
+                        const nextBtn = document.getElementById('pdfNextBtn');
+                        const pageIndicator = document.getElementById('pdfPageIndicator');
+                        if (prevBtn) prevBtn.addEventListener('click', () => {
+                            const cur = window._currentPdfPage || 1;
+                            const newPage = Math.max(1, cur - 1);
+                            renderPdfPage(newPage, 1.0);
+                        });
+                        if (nextBtn) nextBtn.addEventListener('click', () => {
+                            const cur = window._currentPdfPage || 1;
+                            const total = window._numPdfPages || numPages;
+                            const newPage = Math.min(total, cur + 1);
+                            renderPdfPage(newPage, 1.0);
+                        });
+
+
                     } catch (error) {
                         if (pdfCanvas) pdfCanvas.style.display = 'none';
+                        console.error('PDF preview error', error);
                     }
                 };
                 reader.readAsArrayBuffer(file);
