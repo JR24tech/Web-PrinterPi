@@ -476,16 +476,16 @@
             align-items: center;
             justify-content: center;
             padding: 0;
-            border: 1px solid rgba(13,110,253,0.12);
+            border: 1px solid rgba(13, 110, 253, 0.12);
             background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
             color: #0d6efd;
-            box-shadow: 0 6px 14px rgba(13,110,253,0.08);
+            box-shadow: 0 6px 14px rgba(13, 110, 253, 0.08);
             transition: transform 0.12s ease, box-shadow 0.12s ease;
         }
 
         .pdf-nav-btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(13,110,253,0.12);
+            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.12);
         }
 
         .pdf-nav-btn:disabled {
@@ -502,7 +502,6 @@
             min-width: 96px;
             text-align: center;
         }
-
     </style>
 </head>
 
@@ -526,14 +525,11 @@
                     <form method="POST" enctype="multipart/form-data" id="printForm">
 
 
-                                                <div class="section-card mb-3">
+                        <div class="section-card mb-3">
                             <div class="section-title">
                                 <span><i class="bi bi-hdd-network-fill me-2"></i> เลือกเครื่องพิมพ์</span>
                             </div>
                             <div class="printer-panel">
-                                <label for="printer" class="form-label fw-bold text-primary compact-label mb-1">
-                                    <i class="bi bi-printer-fill me-1"></i> เครื่องพิมพ์ที่พร้อมใช้งาน
-                                </label>
                                 <select class="form-select printer-option compact-control" name="printer" id="printer"
                                     required>
                                     {% if printers %}
@@ -543,7 +539,9 @@
                                         data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}"
                                         data-job-state-label="{{ printer.job_state_label or '' }}"
                                         data-job-id="{{ printer.job_id or '' }}"
-                                        data-job-filename="{{ printer.job_filename or '' }}">
+                                        data-job-filename="{{ printer.job_filename or '' }}"
+                                        data-job-current-page="{{ printer.job_current_page if printer.job_current_page is not none else '' }}"
+                                        data-job-total-pages="{{ printer.job_total_pages if printer.job_total_pages is not none else '' }}">
                                         🖨️ {{ printer.name }}
                                     </option>
                                     {% endfor %}
@@ -567,6 +565,10 @@
                                                 style="width: 0%" aria-valuemin="0" aria-valuemax="100">
                                             </div>
                                         </div>
+                                        <div class="d-flex justify-content-center mt-1">
+                                            <span id="printerPageIndicator"
+                                                class="pdf-page-indicator d-none">กำลังพิมพ์หน้า 0 / 0</span>
+                                        </div>
                                     </div>
                                 </div>
 
@@ -583,16 +585,18 @@
                             </div>
                             <div class="upload-layout">
                                 <div class="upload-drop-panel" id="dropZoneContainer">
-                                    <div class="drop-zone h-100 p-4 rounded-3 position-relative"
-                                        id="dropZone" onclick="document.getElementById('file').click()"
+                                    <div class="drop-zone h-100 p-4 rounded-3 position-relative" id="dropZone"
+                                        onclick="document.getElementById('file').click()"
                                         style="cursor: pointer; border: 2px dashed #0d6efd; min-height: 220px; transition: all 0.2s;">
                                         <div class="drop-zone-content">
                                             <div class="drop-zone-icon-pill" id="dropZoneIcon">
                                                 <i class="bi bi-cloud-arrow-up"></i>
                                             </div>
                                             <div class="drop-zone-body">
-                                                <div class="fw-medium text-dark" id="dropZoneText">ลากไฟล์มาวางที่นี่ หรือ
-                                                    <span class="text-primary">คลิกเพื่อเลือกไฟล์</span></div>
+                                                <div class="fw-medium text-dark" id="dropZoneText">ลากไฟล์มาวางที่นี่
+                                                    หรือ
+                                                    <span class="text-primary">คลิกเพื่อเลือกไฟล์</span>
+                                                </div>
                                                 <div class="text-muted small mt-1" id="dropZoneSubText">รองรับ PDF,
                                                     รูปภาพ และเอกสารทั่วไป</div>
                                                 <div class="drop-zone-actions" id="dropZoneActions"></div>
@@ -606,21 +610,23 @@
                                     <div class="paper-preview-shell" id="filePreview">
                                         <div class="paper-sheet" id="paperSheet">
                                             <img id="imgPreview" alt="ตัวอย่างภาพก่อนพิมพ์" />
-                                            <div id="pdfMainView" style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
+                                            <div id="pdfMainView"
+                                                style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
                                                 <canvas id="pdfPreviewCanvas"></canvas>
                                             </div>
                                         </div>
 
                                         <!-- Thumbnails + show-all toggle -->
                                         <div class="w-100 mt-2">
-                                            <div class="d-flex align-items-center justify-content-center mb-2 gap-3 pdf-nav">
-                                                <button id="pdfPrevBtn" type="button" class="pdf-nav-btn" disabled title="ย้อนกลับ"><i class="bi bi-chevron-left"></i></button>
+                                            <div
+                                                class="d-flex align-items-center justify-content-center mb-2 gap-3 pdf-nav">
+                                                <button id="pdfPrevBtn" type="button" class="pdf-nav-btn" disabled
+                                                    title="ย้อนกลับ"><i class="bi bi-chevron-left"></i></button>
                                                 <span id="pdfPageIndicator" class="pdf-page-indicator">หน้า 0 / 0</span>
-                                                <button id="pdfNextBtn" type="button" class="pdf-nav-btn" disabled title="ถัดไป"><i class="bi bi-chevron-right"></i></button>
+                                                <button id="pdfNextBtn" type="button" class="pdf-nav-btn" disabled
+                                                    title="ถัดไป"><i class="bi bi-chevron-right"></i></button>
                                             </div>
                                         </div>
-
-                                        <span id="previewOrientationLabel" class="preview-orientation badge rounded-pill bg-light text-primary d-none">แนวตั้ง</span>
                                     </div>
                                 </div>
                             </div>
@@ -630,8 +636,7 @@
                         </div>
 
                         <div class="section-card mb-3">
-                            <button
-                                class="settings-toggle w-100 d-flex justify-content-between align-items-center"
+                            <button class="settings-toggle w-100 d-flex justify-content-between align-items-center"
                                 type="button" data-bs-toggle="collapse" data-bs-target="#printSettings"
                                 aria-expanded="false" aria-controls="printSettings">
                                 <span><i class="bi bi-gear-fill me-2"></i> การตั้งค่าการพิมพ์</span>
@@ -710,7 +715,8 @@
                             </div>
 
                             <!-- Progress Area -->
-                            <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3 w-100" role="status">
+                            <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3 w-100"
+                                role="status">
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <div class="d-flex align-items-center gap-2">
                                         <i class="bi bi-cloud-arrow-up-fill"></i>
@@ -721,7 +727,8 @@
                                 <div class="progress" style="height: 10px;">
                                     <div id="uploadProgressBar"
                                         class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                        role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100"></div>
+                                        role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1181,6 +1188,9 @@
                     option.setAttribute('data-job-state-label', printer.job_state_label || '');
                     option.setAttribute('data-job-id', printer.job_id || '');
                     option.setAttribute('data-job-filename', printer.job_filename || '');
+                    // optional: current printing page info (if backend supplies)
+                    option.setAttribute('data-job-current-page', printer.job_current_page != null ? String(printer.job_current_page) : '');
+                    option.setAttribute('data-job-total-pages', printer.job_total_pages != null ? String(printer.job_total_pages) : '');
                     option.textContent = `🖨️ ${printer.name}`;
                     if (printer.name === currentValue) {
                         option.selected = true;
@@ -1301,6 +1311,21 @@
             if (printerProgressBar) {
                 printerProgressBar.style.width = `${progressPercent}%`;
                 printerProgressBar.setAttribute('aria-valuenow', String(progressPercent));
+            }
+
+            // Update printer job page indicator if backend supplies current/total page info
+            const rawJobCurrentPage = opt ? opt.getAttribute('data-job-current-page') : '';
+            const rawJobTotalPages = opt ? opt.getAttribute('data-job-total-pages') : '';
+            const curPage = Number.parseInt(rawJobCurrentPage, 10);
+            const totalPages = Number.parseInt(rawJobTotalPages, 10);
+            const printerPageIndicator = document.getElementById('printerPageIndicator');
+            if (printerPageIndicator) {
+                if (!Number.isNaN(curPage) && !Number.isNaN(totalPages) && totalPages > 0) {
+                    printerPageIndicator.textContent = `กำลังพิมพ์หน้า ${curPage} / ${totalPages}`;
+                    printerPageIndicator.classList.remove('d-none');
+                } else {
+                    printerPageIndicator.classList.add('d-none');
+                }
             }
 
         }
