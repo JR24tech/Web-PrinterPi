@@ -1,6 +1,6 @@
 {
   "name": "Web-PrinterPi",
-  "short_name": "PrinterPi",
+  "short_name": "Web-PrinterPi",
   "icons": [
     {
       "src": "/static/favicon-192x192.png",
