@@ -40,102 +40,189 @@
             -moz-appearance: textfield;
         }
 
-        /* Theme Variables */
+        /* Apple Liquid Glass Variables */
         :root {
-            --bg-body: linear-gradient(135deg, #eef5ff 0%, #f6f9ff 50%, #e6f0ff 100%);
-            --header-bg: rgba(246, 249, 255, 0.85);
-            --header-border: rgba(219, 234, 254, 0.9);
-            --card-bg: rgba(255, 255, 255, 0.96);
-            --card-border: #dbeafe;
-            --card-shadow: 0 6px 24px rgba(37, 99, 235, 0.06);
-            --title-color: #172554;
-            --muted-color: rgba(30, 58, 138, 0.65);
-            --input-bg: rgba(239, 246, 255, 0.55);
-            --input-border: #bfdbfe;
-            --input-text: #172554;
-            --drop-bg: rgba(239, 246, 255, 0.4);
-            --drop-border: #93c5fd;
-            --drop-hover-bg: rgba(219, 234, 254, 0.65);
-            --accent-bg: #2563eb;
-            --accent-hover: #1d4ed8;
+            --bg-base: #eaf3ff;
+            --orb-1: rgba(56, 189, 248, 0.42);
+            --orb-2: rgba(99, 102, 241, 0.24);
+            --orb-3: rgba(16, 185, 129, 0.18);
+
+            --glass-bg: rgba(255, 255, 255, 0.56);
+            --glass-bg-elevated: rgba(255, 255, 255, 0.72);
+            --glass-border: rgba(255, 255, 255, 0.78);
+            --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9), inset 0 -1px 0 rgba(255, 255, 255, 0.35);
+            --glass-shadow: 0 18px 45px rgba(15, 23, 42, 0.08), 0 4px 14px rgba(37, 99, 235, 0.06);
+
+            --header-bg: rgba(255, 255, 255, 0.52);
+            --header-border: rgba(255, 255, 255, 0.72);
+
+            --title-color: #0f172a;
+            --muted-color: rgba(15, 23, 42, 0.58);
+
+            --input-bg: rgba(255, 255, 255, 0.52);
+            --input-border: rgba(255, 255, 255, 0.75);
+            --input-ring: rgba(14, 165, 233, 0.35);
+            --input-text: #0f172a;
+
+            --drop-bg: rgba(255, 255, 255, 0.36);
+            --drop-border: rgba(14, 165, 233, 0.45);
+            --drop-hover-bg: rgba(255, 255, 255, 0.62);
+
+            --accent-bg: linear-gradient(180deg, #38bdf8 0%, #0284c7 100%);
+            --accent-hover: linear-gradient(180deg, #0ea5e9 0%, #0369a1 100%);
             --accent-text: #ffffff;
-            --accent-soft-bg: #eff6ff;
-            --accent-soft-text: #1d4ed8;
-            --accent-soft-border: #bfdbfe;
-            --stage-bg: #e8f1fc;
-            --stage-dot: #bfdbfe;
-            --paper-bg: #ffffff;
-            --paper-text: #334155;
+            --accent-glow: 0 8px 22px rgba(2, 132, 199, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.55);
+
+            --pill-bg: rgba(255, 255, 255, 0.55);
+            --pill-text: #0369a1;
+            --pill-border: rgba(255, 255, 255, 0.8);
+
+            --stage-bg: rgba(240, 249, 255, 0.45);
+            --stage-dot: rgba(14, 165, 233, 0.22);
+            --paper-bg: rgba(255, 255, 255, 0.94);
+            --paper-text: #1e293b;
         }
 
         body[data-theme="slate"] {
-            --bg-body: #f8fafc;
-            --header-bg: rgba(248, 250, 252, 0.88);
-            --header-border: #e2e8f0;
-            --card-bg: #ffffff;
-            --card-border: #e2e8f0;
-            --card-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+            --bg-base: #eef2f6;
+            --orb-1: rgba(148, 163, 184, 0.35);
+            --orb-2: rgba(203, 213, 225, 0.45);
+            --orb-3: rgba(100, 116, 139, 0.2);
+
+            --glass-bg: rgba(255, 255, 255, 0.6);
+            --glass-bg-elevated: rgba(255, 255, 255, 0.76);
+            --glass-border: rgba(255, 255, 255, 0.85);
+            --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95), inset 0 -1px 0 rgba(255, 255, 255, 0.4);
+            --glass-shadow: 0 18px 40px rgba(15, 23, 42, 0.06), 0 4px 12px rgba(15, 23, 42, 0.04);
+
+            --header-bg: rgba(255, 255, 255, 0.58);
+            --header-border: rgba(255, 255, 255, 0.8);
+
             --title-color: #0f172a;
             --muted-color: #64748b;
-            --input-bg: #f8fafc;
-            --input-border: #cbd5e1;
+
+            --input-bg: rgba(255, 255, 255, 0.58);
+            --input-border: rgba(255, 255, 255, 0.82);
+            --input-ring: rgba(51, 65, 85, 0.25);
             --input-text: #0f172a;
-            --drop-bg: #f8fafc;
-            --drop-border: #cbd5e1;
-            --drop-hover-bg: #f1f5f9;
-            --accent-bg: #0f172a;
-            --accent-hover: #1e293b;
+
+            --drop-bg: rgba(255, 255, 255, 0.42);
+            --drop-border: rgba(100, 116, 139, 0.4);
+            --drop-hover-bg: rgba(255, 255, 255, 0.68);
+
+            --accent-bg: linear-gradient(180deg, #334155 0%, #0f172a 100%);
+            --accent-hover: linear-gradient(180deg, #1e293b 0%, #020617 100%);
             --accent-text: #ffffff;
-            --accent-soft-bg: #f1f5f9;
-            --accent-soft-text: #334155;
-            --accent-soft-border: #cbd5e1;
-            --stage-bg: #f1f5f9;
-            --stage-dot: #cbd5e1;
-            --paper-bg: #ffffff;
+            --accent-glow: 0 8px 20px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+            --pill-bg: rgba(255, 255, 255, 0.62);
+            --pill-text: #1e293b;
+            --pill-border: rgba(255, 255, 255, 0.85);
+
+            --stage-bg: rgba(241, 245, 249, 0.55);
+            --stage-dot: rgba(100, 116, 139, 0.2);
+            --paper-bg: rgba(255, 255, 255, 0.96);
             --paper-text: #1e293b;
         }
 
         body[data-theme="midnight"] {
-            --bg-body: linear-gradient(135deg, #090d16 0%, #0f172a 55%, #111c33 100%);
-            --header-bg: rgba(15, 23, 42, 0.85);
-            --header-border: rgba(30, 58, 138, 0.45);
-            --card-bg: rgba(15, 23, 42, 0.92);
-            --card-border: rgba(51, 65, 85, 0.7);
-            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
-            --title-color: #f1f5f9;
+            --bg-base: #070b14;
+            --orb-1: rgba(56, 189, 248, 0.24);
+            --orb-2: rgba(129, 140, 248, 0.22);
+            --orb-3: rgba(45, 212, 191, 0.14);
+
+            --glass-bg: rgba(17, 25, 46, 0.58);
+            --glass-bg-elevated: rgba(23, 35, 64, 0.76);
+            --glass-border: rgba(255, 255, 255, 0.14);
+            --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.18), inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+            --glass-shadow: 0 22px 50px rgba(0, 0, 0, 0.55), 0 6px 18px rgba(15, 23, 42, 0.4);
+
+            --header-bg: rgba(12, 19, 36, 0.62);
+            --header-border: rgba(255, 255, 255, 0.12);
+
+            --title-color: #f8fafc;
             --muted-color: #94a3b8;
-            --input-bg: rgba(30, 41, 59, 0.75);
-            --input-border: #334155;
-            --input-text: #f8fafc;
-            --drop-bg: rgba(30, 41, 59, 0.45);
-            --drop-border: #3b82f6;
-            --drop-hover-bg: rgba(37, 99, 235, 0.16);
-            --accent-bg: #3b82f6;
-            --accent-hover: #2563eb;
+
+            --input-bg: rgba(30, 41, 68, 0.55);
+            --input-border: rgba(255, 255, 255, 0.14);
+            --input-ring: rgba(96, 165, 250, 0.35);
+            --input-text: #f1f5f9;
+
+            --drop-bg: rgba(22, 33, 58, 0.42);
+            --drop-border: rgba(96, 165, 250, 0.38);
+            --drop-hover-bg: rgba(30, 46, 82, 0.64);
+
+            --accent-bg: linear-gradient(180deg, #60a5fa 0%, #2563eb 100%);
+            --accent-hover: linear-gradient(180deg, #3b82f6 0%, #1d4ed8 100%);
             --accent-text: #ffffff;
-            --accent-soft-bg: rgba(59, 130, 246, 0.15);
-            --accent-soft-text: #93c5fd;
-            --accent-soft-border: rgba(59, 130, 246, 0.35);
-            --stage-bg: #0b1220;
-            --stage-dot: #1e293b;
+            --accent-glow: 0 8px 24px rgba(37, 99, 235, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.45);
+
+            --pill-bg: rgba(30, 41, 68, 0.65);
+            --pill-text: #bae6fd;
+            --pill-border: rgba(255, 255, 255, 0.15);
+
+            --stage-bg: rgba(10, 16, 30, 0.58);
+            --stage-dot: rgba(148, 163, 184, 0.16);
             --paper-bg: #f8fafc;
             --paper-text: #0f172a;
         }
 
         body {
-            background: var(--bg-body);
+            background-color: var(--bg-base);
             color: var(--input-text);
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Liquid Refraction Orbs */
+        body::before,
+        body::after {
+            content: "";
+            position: fixed;
+            border-radius: 9999px;
+            filter: blur(85px);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body::before {
+            width: 460px;
+            height: 460px;
+            top: -110px;
+            left: -90px;
+            background: radial-gradient(circle, var(--orb-1), transparent 70%);
+        }
+
+        body::after {
+            width: 520px;
+            height: 520px;
+            bottom: -140px;
+            right: -110px;
+            background: radial-gradient(circle, var(--orb-2), var(--orb-3) 55%, transparent 75%);
+        }
+
+        .glass-surface {
+            background: var(--glass-bg);
+            backdrop-filter: blur(28px) saturate(180%);
+            -webkit-backdrop-filter: blur(28px) saturate(180%);
+            border-color: var(--glass-border);
+            box-shadow: var(--glass-shadow), var(--glass-highlight);
+        }
+
+        .glass-elevated {
+            background: var(--glass-bg-elevated);
+            backdrop-filter: blur(32px) saturate(190%);
+            -webkit-backdrop-filter: blur(32px) saturate(190%);
+            border-color: var(--glass-border);
+            box-shadow: var(--glass-shadow), var(--glass-highlight);
         }
 
         .theme-header {
             background: var(--header-bg);
+            backdrop-filter: blur(24px) saturate(180%);
+            -webkit-backdrop-filter: blur(24px) saturate(180%);
             border-color: var(--header-border);
-        }
-
-        .theme-card {
-            background: var(--card-bg);
-            border-color: var(--card-border);
-            box-shadow: var(--card-shadow);
+            box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.25);
         }
 
         .theme-title { color: var(--title-color); }
@@ -143,43 +230,62 @@
 
         .theme-input {
             background: var(--input-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             border-color: var(--input-border);
             color: var(--input-text);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+        }
+        .theme-input:focus {
+            box-shadow: 0 0 0 3px var(--input-ring), inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
 
         .theme-dropzone {
             background: var(--drop-bg);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
             border-color: var(--drop-border);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
         .theme-dropzone:hover,
         .theme-dropzone.is-dragover {
             background: var(--drop-hover-bg);
+            transform: translateY(-1px);
         }
 
         .theme-accent-btn {
             background: var(--accent-bg);
             color: var(--accent-text);
+            box-shadow: var(--accent-glow);
         }
         .theme-accent-btn:hover:not(:disabled) {
             background: var(--accent-hover);
+            transform: translateY(-0.5px);
         }
 
         .theme-soft-badge {
-            background: var(--accent-soft-bg);
-            color: var(--accent-soft-text);
-            border-color: var(--accent-soft-border);
+            background: var(--pill-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            color: var(--pill-text);
+            border-color: var(--pill-border);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
         }
 
         .preview-stage {
             background-color: var(--stage-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
             background-image: radial-gradient(var(--stage-dot) 1px, transparent 1px);
             background-size: 14px 14px;
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
         }
 
         .paper-sheet {
             aspect-ratio: var(--paper-ratio, 1 / 1.414);
             background: var(--paper-bg);
-            transition: all 0.2s ease;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.7);
+            transition: all 0.22s cubic-bezier(0.22, 1, 0.36, 1);
         }
         .paper-sheet pre {
             color: var(--paper-text);
@@ -192,13 +298,13 @@
     </style>
 </head>
 
-<body data-theme="blue" class="min-h-screen flex flex-col antialiased pb-16 transition-colors duration-200">
+<body data-theme="blue" class="min-h-screen flex flex-col antialiased pb-16 transition-colors duration-300">
 
-    <!-- Sticky Header -->
-    <header class="theme-header sticky top-0 z-30 backdrop-blur-md border-b shadow-[0_2px_12px_rgba(37,99,235,0.04)]">
+    <!-- Sticky Liquid Glass Header -->
+    <header class="theme-header sticky top-0 z-30 border-b">
         <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5 min-w-0">
-                <span class="theme-accent-btn w-9 h-9 rounded-xl flex items-center justify-center p-1.5 shadow-sm shrink-0 overflow-hidden">
+                <span class="theme-accent-btn w-9 h-9 rounded-2xl flex items-center justify-center p-1.5 shrink-0 overflow-hidden">
                     <img src="./static/favicon-192x192.png" alt="Web PrinterPi Logo" class="w-full h-full object-contain">
                 </span>
                 <div class="min-w-0">
@@ -216,34 +322,34 @@
                 <!-- Theme Switcher -->
                 <div class="relative">
                     <button type="button" onclick="toggleDropdown('themeMenu')" title="เปลี่ยนธีม"
-                        class="theme-soft-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition">
+                        class="theme-soft-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border cursor-pointer transition">
                         <i class="bi bi-palette"></i>
                         <span id="currentThemeLabel" class="hidden sm:inline">สว่าง</span>
                         <i class="bi bi-chevron-down text-[10px]"></i>
                     </button>
 
                     <div id="themeMenu"
-                        class="theme-card hidden absolute right-0 mt-1.5 w-36 rounded-2xl border p-1.5 shadow-lg z-40 text-xs space-y-0.5">
+                        class="glass-elevated hidden absolute right-0 mt-2 w-40 rounded-3xl border p-1.5 z-40 text-xs space-y-0.5">
                         <button type="button" onclick="setTheme('blue')"
-                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-blue-500/10 text-left font-medium">
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-2xl hover:bg-sky-500/10 text-left font-medium transition">
                             <span class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-sky-500 shadow-sm"></span>
                                 สว่าง
                             </span>
-                            <i id="check-blue" class="bi bi-check2 text-blue-500"></i>
+                            <i id="check-blue" class="bi bi-check2 text-sky-500"></i>
                         </button>
                         <button type="button" onclick="setTheme('slate')"
-                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-500/10 text-left font-medium">
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-2xl hover:bg-slate-500/10 text-left font-medium transition">
                             <span class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-slate-800"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-700 shadow-sm"></span>
                                 มินิมอล
                             </span>
                             <i id="check-slate" class="bi bi-check2 text-slate-500 hidden"></i>
                         </button>
                         <button type="button" onclick="setTheme('midnight')"
-                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-indigo-500/10 text-left font-medium">
+                            class="w-full flex items-center justify-between px-3 py-2 rounded-2xl hover:bg-indigo-500/15 text-left font-medium transition">
                             <span class="flex items-center gap-2">
-                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-sm"></span>
                                 มืด
                             </span>
                             <i id="check-midnight" class="bi bi-check2 text-indigo-400 hidden"></i>
@@ -252,15 +358,15 @@
                 </div>
 
                 <!-- Printer Status Pill -->
-                <span id="printerStatusBadge" class="theme-soft-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border">
-                    <span id="printerStatusDot" class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                <span id="printerStatusBadge" class="theme-soft-badge inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border">
+                    <span id="printerStatusDot" class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
                     <span id="printerStatusText">กำลังเช็ก...</span>
                 </span>
             </div>
         </div>
     </header>
 
-    <main class="flex-1 w-full max-w-5xl mx-auto pt-6 px-4">
+    <main class="relative z-10 flex-1 w-full max-w-5xl mx-auto pt-6 px-4">
 
         <!-- Flash Messages -->
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -268,11 +374,11 @@
                 <div class="space-y-2 mb-5">
                 {% for category, message in messages %}
                     {% set style_map = {
-                        'success': 'bg-blue-50 text-blue-800 border-blue-200',
-                        'danger': 'bg-rose-50 text-rose-700 border-rose-200',
-                        'warning': 'bg-amber-50 text-amber-700 border-amber-200'
+                        'success': 'bg-sky-500/15 text-sky-900 dark:text-sky-100 border-white/60',
+                        'danger': 'bg-rose-500/15 text-rose-800 border-rose-300/60',
+                        'warning': 'bg-amber-500/15 text-amber-800 border-amber-300/60'
                     } %}
-                    <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium {{ style_map.get(category, 'bg-blue-50 text-blue-800 border-blue-200') }}">
+                    <div class="glass-surface flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium {{ style_map.get(category, 'text-sky-900') }}">
                         <span>{{ message }}</span>
                         <button type="button" onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100">
                             <i class="bi bi-x"></i>
@@ -284,7 +390,7 @@
         {% endwith %}
 
         <!-- Client Alert -->
-        <div id="formAlert" class="hidden mb-5 px-4 py-2.5 rounded-2xl border bg-amber-50 text-amber-700 border-amber-200 text-xs sm:text-sm font-medium">
+        <div id="formAlert" class="glass-surface hidden mb-5 px-4 py-2.5 rounded-2xl border border-amber-300/70 text-amber-800 text-xs sm:text-sm font-medium">
             <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
         </div>
 
@@ -292,21 +398,21 @@
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
 
                 <!-- LEFT: Core Flow + Sub-function Dropdowns -->
-                <div class="theme-card lg:col-span-7 rounded-3xl border p-5 sm:p-6 space-y-5">
+                <div class="glass-surface lg:col-span-7 rounded-[28px] border p-5 sm:p-6 space-y-5">
 
                     <!-- Printer Select + Info Dropdown -->
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label for="printer" class="theme-muted text-xs font-semibold">เครื่องพิมพ์</label>
                             <button type="button" id="togglePrinterInfoBtn" onclick="toggleDropdown('printerInfoMenu')"
-                                class="theme-muted hover:opacity-80 inline-flex items-center gap-1 text-xs font-medium transition">
+                                class="theme-muted hover:opacity-80 inline-flex items-center gap-1 text-xs font-medium transition cursor-pointer">
                                 <span>ข้อมูลหมึก</span>
                                 <i class="bi bi-chevron-down text-[10px]"></i>
                             </button>
                         </div>
 
                         <select name="printer" id="printer" required
-                            class="theme-input w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium outline-none transition">
+                            class="theme-input w-full rounded-2xl border px-3.5 py-2.5 text-sm font-medium outline-none transition">
                             {% if printers %}
                                 {% for printer in printers %}
                                 <option value="{{ printer.name }}"
@@ -344,7 +450,7 @@
                                     <span id="livePrintFile" class="truncate font-medium"></span>
                                 </div>
                                 <button type="button" id="cancelJobBtn"
-                                    class="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold transition">
+                                    class="shrink-0 px-2.5 py-1 rounded-xl bg-white/80 hover:bg-rose-50 text-rose-600 border border-rose-200/80 font-semibold transition cursor-pointer">
                                     ยกเลิกงาน
                                 </button>
                             </div>
@@ -365,7 +471,7 @@
                     <div>
                         <label class="theme-muted block text-xs font-semibold mb-1.5">ไฟล์เอกสาร</label>
                         <div id="dropZone" onclick="document.getElementById('file').click()"
-                            class="theme-dropzone cursor-pointer rounded-2xl border border-dashed p-6 text-center transition">
+                            class="theme-dropzone cursor-pointer rounded-3xl border border-dashed p-6 text-center transition duration-200">
 
                             <div id="dropZoneDefault">
                                 <i class="bi bi-cloud-arrow-up theme-muted text-2xl block mb-1.5"></i>
@@ -384,11 +490,11 @@
                                     </div>
                                     <div class="flex items-center gap-1.5 shrink-0">
                                         <button type="button" onclick="event.stopPropagation(); document.getElementById('file').click()"
-                                            class="theme-input px-2.5 py-1 rounded-lg text-xs font-medium border transition">
+                                            class="theme-input px-2.5 py-1 rounded-xl text-xs font-medium border transition cursor-pointer">
                                             เปลี่ยน
                                         </button>
                                         <button type="button" onclick="clearSelectedFile(event)"
-                                            class="px-2 py-1 rounded-lg text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
+                                            class="px-2 py-1 rounded-xl text-xs font-medium text-rose-600 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-300/50 transition cursor-pointer">
                                             <i class="bi bi-trash3"></i>
                                         </button>
                                     </div>
@@ -399,9 +505,9 @@
                     </div>
 
                     <!-- Sub-function Dropdown: Print Settings -->
-                    <div class="theme-card rounded-2xl border overflow-hidden">
+                    <div class="theme-input rounded-3xl border overflow-hidden">
                         <button type="button" onclick="toggleDropdown('printSettingsMenu', 'settingsChevron')"
-                            class="theme-input w-full px-4 py-3 flex items-center justify-between text-xs font-semibold transition">
+                            class="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold transition cursor-pointer">
                             <span class="theme-title flex items-center gap-2">
                                 <i class="bi bi-sliders"></i>
                                 ตั้งค่าการพิมพ์เพิ่มเติม
@@ -412,7 +518,7 @@
                             </span>
                         </button>
 
-                        <div id="printSettingsMenu" class="hidden p-4 border-t border-inherit grid grid-cols-2 gap-3 text-xs">
+                        <div id="printSettingsMenu" class="hidden p-4 border-t border-white/30 grid grid-cols-2 gap-3 text-xs">
                             <div>
                                 <label for="paper_size" class="theme-muted block font-medium mb-1">ขนาดกระดาษ</label>
                                 <select name="paper_size" id="paper_size" onchange="updatePreviewStyle()"
@@ -455,15 +561,15 @@
 
                     <!-- Copies + Submit -->
                     <div class="flex items-center gap-3 pt-1">
-                        <div class="theme-input flex items-center h-11 w-28 rounded-xl border overflow-hidden shrink-0">
-                            <button type="button" onclick="adjustCopies(-1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold">−</button>
+                        <div class="theme-input flex items-center h-11 w-28 rounded-2xl border overflow-hidden shrink-0">
+                            <button type="button" onclick="adjustCopies(-1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">−</button>
                             <input type="number" name="copies" id="copies" min="1" max="100" value="1" required
                                 class="theme-title w-full h-full bg-transparent text-center text-sm font-semibold outline-none">
-                            <button type="button" onclick="adjustCopies(1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold">+</button>
+                            <button type="button" onclick="adjustCopies(1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">+</button>
                         </div>
 
                         <button type="submit" id="printActionButton"
-                            class="theme-accent-btn flex-1 h-11 rounded-xl disabled:opacity-40 text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
+                            class="theme-accent-btn flex-1 h-11 rounded-2xl disabled:opacity-40 text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
                             <i class="bi bi-send"></i>
                             <span>สั่งพิมพ์</span>
                         </button>
@@ -482,14 +588,14 @@
                 </div>
 
                 <!-- RIGHT: Live Preview -->
-                <div class="theme-card lg:col-span-5 rounded-3xl border p-5 flex flex-col min-h-[430px]">
+                <div class="glass-surface lg:col-span-5 rounded-[28px] border p-5 flex flex-col min-h-[430px]">
                     <div class="flex items-center justify-between mb-3">
                         <span class="theme-muted text-xs font-semibold">ตัวอย่างก่อนพิมพ์</span>
-                        <span id="previewSpecBadge" class="theme-soft-badge text-[11px] px-2 py-0.5 rounded-full border">A4 · แนวตั้ง</span>
+                        <span id="previewSpecBadge" class="theme-soft-badge text-[11px] px-2.5 py-0.5 rounded-full border">A4 · แนวตั้ง</span>
                     </div>
 
-                    <div class="preview-stage flex-1 rounded-2xl p-5 flex flex-col items-center justify-center overflow-hidden border border-inherit">
-                        <div id="paperSheet" class="paper-sheet w-full max-w-[220px] rounded-md shadow-md p-2 flex items-center justify-center overflow-hidden">
+                    <div class="preview-stage flex-1 rounded-3xl p-5 flex flex-col items-center justify-center overflow-hidden border border-white/50">
+                        <div id="paperSheet" class="paper-sheet w-full max-w-[220px] rounded-xl p-2 flex items-center justify-center overflow-hidden">
                             <div id="emptyPreviewState" class="text-center text-slate-400 px-2">
                                 <i class="bi bi-file-earmark text-2xl block mb-1 opacity-60"></i>
                                 <span class="text-[11px]">ยังไม่ได้เลือกไฟล์</span>
@@ -499,12 +605,12 @@
                             <pre id="txtPreview" class="hidden w-full h-full text-[9px] leading-snug whitespace-pre-wrap break-words overflow-hidden p-1 font-mono"></pre>
                         </div>
 
-                        <div id="pdfControls" class="hidden mt-3 items-center gap-2.5 bg-white px-3 py-1 rounded-full border border-slate-200 text-xs text-slate-700">
-                            <button type="button" id="pdfPrevBtn" disabled class="hover:text-blue-600 disabled:opacity-30">
+                        <div id="pdfControls" class="glass-elevated hidden mt-3 items-center gap-2.5 px-3 py-1 rounded-full border text-xs text-slate-700">
+                            <button type="button" id="pdfPrevBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
                                 <i class="bi bi-chevron-left"></i>
                             </button>
                             <span id="pdfPageIndicator" class="font-medium">1 / 1</span>
-                            <button type="button" id="pdfNextBtn" disabled class="hover:text-blue-600 disabled:opacity-30">
+                            <button type="button" id="pdfNextBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
                                 <i class="bi bi-chevron-right"></i>
                             </button>
                         </div>
@@ -515,8 +621,8 @@
         </form>
     </main>
 
-    <!-- Sticky Footer -->
-    <footer class="theme-header fixed bottom-0 inset-x-0 z-20 backdrop-blur-md border-t">
+    <!-- Sticky Liquid Glass Footer -->
+    <footer class="theme-header fixed bottom-0 inset-x-0 z-20 border-t">
         <div class="max-w-5xl mx-auto px-4 h-11 flex items-center justify-between text-[11px] theme-muted">
             <span><strong class="theme-title font-semibold">Web PrinterPi </strong>Version 2.0</span>
             <span>
@@ -546,9 +652,9 @@
         let currentActiveJobId = null;
 
         const THEME_NAMES = {
-            blue: 'น้ำเงิน',
+            blue: 'สว่าง',
             slate: 'มินิมอล',
-            midnight: 'มิดไนท์'
+            midnight: 'มืด'
         };
 
         function setTheme(themeName) {
@@ -791,7 +897,7 @@
             const statusText = document.getElementById('printerStatusText');
             document.getElementById('printerInkLevelText').textContent = ink;
 
-            badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border';
+            badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-md';
             dot.className = 'w-1.5 h-1.5 rounded-full';
 
             const isPrinting = status.includes('กำลังพิมพ์') || stateLabel === 'กำลังพิมพ์';
@@ -799,20 +905,20 @@
             currentPrinterBusy = isPrinting || isQueued;
 
             if (isPrinting) {
-                badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-200');
+                badge.classList.add('bg-amber-500/20', 'text-amber-700', 'border-amber-300/60');
                 dot.classList.add('bg-amber-500', 'animate-ping');
                 statusText.textContent = 'กำลังพิมพ์';
             } else if (isQueued) {
                 badge.classList.add('theme-soft-badge');
-                dot.classList.add('bg-blue-500');
+                dot.classList.add('bg-sky-500');
                 statusText.textContent = 'รอคิวพิมพ์';
             } else if (status.includes('พร้อม') || status.toLowerCase().includes('idle')) {
-                badge.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+                badge.classList.add('bg-emerald-500/15', 'text-emerald-700', 'border-emerald-300/60');
                 dot.classList.add('bg-emerald-500');
                 statusText.textContent = 'พร้อมใช้งาน';
             } else {
                 badge.classList.add('theme-soft-badge');
-                dot.classList.add('bg-blue-500');
+                dot.classList.add('bg-sky-500');
                 statusText.textContent = status || 'ไม่ทราบ';
             }
 
