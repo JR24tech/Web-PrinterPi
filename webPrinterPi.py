@@ -1,26 +1,22 @@
 import os
 import re
+import uuid
 import subprocess
-from flask import Flask, render_template, request, redirect, flash, jsonify # type: ignore
-from werkzeug.utils import secure_filename # type: ignore
+from flask import Flask, render_template, request, redirect, flash, jsonify
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
-app.secret_key = "supersecretkey_for_sun"
+app.secret_key = "supersecretkey_for_sun_v2"
 UPLOAD_FOLDER = os.path.expanduser('~/web-printerPi/uploads')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-# กำหนดนามสกุลไฟล์ที่อนุญาตให้อัปโหลดเพื่อความปลอดภัย[span_0](start_span)[span_0](end_span)
 ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'txt', 'doc', 'docx'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def convert_to_pdf_if_needed(filepath):
-    """
-    ตรวจสอบว่าเป็นไฟล์ doc หรือ docx หรือไม่ 
-    ถ้าใช่ จะแปลงเป็น PDF ด้วย LibreOffice ก่อนสั่งพิมพ์[span_1](start_span)[span_1](end_span)
-    """
     ext = filepath.rsplit('.', 1)[1].lower()
     if ext in ['doc', 'docx']:
         pdf_dir = os.path.dirname(filepath)
@@ -33,32 +29,26 @@ def convert_to_pdf_if_needed(filepath):
             )
             base_name = os.path.splitext(os.path.basename(filepath))[0]
             pdf_path = os.path.join(pdf_dir, f"{base_name}.pdf")
-
             if os.path.exists(filepath):
                 os.remove(filepath)
-
             return pdf_path
         except subprocess.CalledProcessError:
             return filepath
     return filepath
 
-
 def is_valid_pdf(filepath):
     try:
         with open(filepath, 'rb') as f:
-            header = f.read(1024)
-            header = header.lstrip()
+            header = f.read(1024).lstrip()
             if not header.startswith(b'%PDF'):
                 return False
             f.seek(0, os.SEEK_END)
             size = f.tell()
             tail_size = min(1024, size)
             f.seek(-tail_size, os.SEEK_END)
-            tail = f.read(tail_size)
-            return b'%%EOF' in tail
+            return b'%%EOF' in f.read(tail_size)
     except Exception:
         return False
-
 
 def normalize_pdf(filepath):
     try:
@@ -67,57 +57,34 @@ def normalize_pdf(filepath):
         normalized_path = os.path.join(pdf_dir, f"{base_name}.normalized.pdf")
         subprocess.run(
             [
-                "gs",
-                "-q",
-                "-dNOPAUSE",
-                "-dBATCH",
-                "-sDEVICE=pdfwrite",
-                "-dCompatibilityLevel=1.4",
-                "-dPDFSETTINGS=/printer",
-                "-dAutoRotatePages=/PageByPage",
-                f"-sOutputFile={normalized_path}",
-                filepath,
+                "gs", "-q", "-dNOPAUSE", "-dBATCH",
+                "-sDEVICE=pdfwrite", "-dCompatibilityLevel=1.4",
+                "-dPDFSETTINGS=/printer", "-dAutoRotatePages=/PageByPage",
+                f"-sOutputFile={normalized_path}", filepath,
             ],
-            check=True,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
+            check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
         )
         if os.path.exists(normalized_path):
-            try:
-                if os.path.exists(filepath) and filepath != normalized_path:
-                    os.remove(filepath)
-            except Exception:
-                pass
+            if os.path.exists(filepath) and filepath != normalized_path:
+                os.remove(filepath)
             return normalized_path
     except Exception:
         pass
     return filepath
 
-
 def build_print_command(printer_name, filepath, print_mode, copies, paper_size, print_quality, orientation=None):
     command = ["lp", "-d", printer_name]
-
-    if print_mode == "color":
-        command.extend(["-o", "ColorModel=RGB"])
-    else:
-        command.extend(["-o", "ColorModel=Gray"])
+    command.extend(["-o", "ColorModel=RGB" if print_mode == "color" else "ColorModel=Gray"])
 
     if paper_size:
         command.extend(["-o", f"media={paper_size}"])
-
     if print_quality:
         command.extend(["-o", f"print-quality={print_quality}"])
-
     if orientation in ["portrait", "landscape"]:
-        # CUPS accepts both the generic boolean form (landscape/portrait) and the
-        # IPP orientation-requested value. Some printer backends ignore one while
-        # honoring the other, so we include both for compatibility.
         value = "3" if orientation == "portrait" else "4"
-        command.extend(["-o", f"orientation-requested={value}"])
-        command.extend(["-o", orientation])
+        command.extend(["-o", f"orientation-requested={value}", "-o", orientation])
 
     command.extend(["-o", "fit-to-page"])
-
     if copies and copies > 1:
         command.extend(["-n", str(copies)])
 
@@ -125,49 +92,31 @@ def build_print_command(printer_name, filepath, print_mode, copies, paper_size, 
     return command
 
 def parse_job_status(detail_output, queue_output=""):
-    combined_output = "\n".join([part for part in [detail_output, queue_output] if part])
-    if not combined_output:
+    combined = "\n".join([p for p in [detail_output, queue_output] if p]).lower()
+    if not combined:
         return None, None
-
-    lower_output = combined_output.lower()
-    if any(keyword in lower_output for keyword in ["completed", "finished", "done"]):
+    if any(k in combined for k in ["completed", "finished", "done"]):
         return "completed", "เสร็จสิ้น"
-    if any(keyword in lower_output for keyword in ["active", "job-printing", "printing", "processing", "busy"]):
+    if any(k in combined for k in ["active", "job-printing", "printing", "processing", "busy"]):
         return "printing", "กำลังพิมพ์"
-    if any(keyword in lower_output for keyword in ["pending", "queued", "waiting", "held"]):
+    if any(k in combined for k in ["pending", "queued", "waiting", "held"]):
         return "queued", "รอคิว"
     return None, None
 
 def parse_job_progress(detail_output, queue_output=""):
-    combined_output = "\n".join([part for part in [detail_output, queue_output] if part])
-    if not combined_output:
-        return None
-
-    for line in combined_output.splitlines():
+    combined = "\n".join([p for p in [detail_output, queue_output] if p])
+    for line in combined.splitlines():
         lower_line = line.lower()
-        if not any(keyword in lower_line for keyword in ["percent", "progress", "completed", "processed", "printed", "remaining", "job", "print"]):
+        if not any(k in lower_line for k in ["percent", "progress", "completed", "processed", "printed", "remaining", "job", "print"]):
             continue
-
-        if any(keyword in lower_line for keyword in ["color", "colour", "black", "toner", "ink", "cyan", "magenta", "yellow"]):
+        if any(k in lower_line for k in ["color", "colour", "black", "toner", "ink", "cyan", "magenta", "yellow"]):
             continue
-
-        if "%" not in line:
-            continue
-
         match = re.search(r"(\d{1,3})%", line)
-        if not match:
-            continue
-
-        value = int(match.group(1))
-        if 0 <= value <= 100:
-            return value
-
+        if match and 0 <= int(match.group(1)) <= 100:
+            return int(match.group(1))
     return None
 
 def parse_current_job(printer_name):
-    job_id = None
-    job_filename = None
-
     try:
         lpstat_output = subprocess.check_output(["lpstat", "-o", printer_name]).decode("utf-8", "ignore")
         for line in lpstat_output.splitlines():
@@ -176,13 +125,10 @@ def parse_current_job(printer_name):
                 continue
             parts = re.split(r'\s+', line, maxsplit=3)
             if len(parts) >= 4:
-                job_id = parts[0]
-                job_filename = parts[3].strip()
-                return job_id, job_filename
+                return parts[0], parts[3].strip()
     except Exception:
         pass
-
-    return job_id, job_filename
+    return None, None
 
 def parse_printer_status(line, detail_output, queue_output=""):
     lower_line = line.lower()
@@ -196,9 +142,9 @@ def parse_printer_status(line, detail_output, queue_output=""):
         status = "รอคิว"
     elif job_state == "completed":
         status = "เสร็จสิ้น"
-    elif "is idle" in lower_line or "accepting jobs" in lower_line or "idle" in lower_line or "อยู่นิ่ง" in lower_line:
+    elif any(k in lower_line for k in ["is idle", "accepting jobs", "idle", "อยู่นิ่ง"]):
         status = "พร้อมใช้งาน"
-    elif "printing" in lower_line or "busy" in lower_line or "processing" in lower_line or "active" in lower_queue or "กำลังพิมพ์" in lower_queue:
+    elif any(k in lower_line for k in ["printing", "busy", "processing"]) or any(k in lower_queue for k in ["active", "กำลังพิมพ์"]):
         status = "กำลังพิมพ์"
     else:
         status = "ไม่ทราบ"
@@ -207,30 +153,24 @@ def parse_printer_status(line, detail_output, queue_output=""):
     bw_percent = None
 
     if "color" in lower_detail or "colour" in lower_detail:
-        color_match = None
         for pattern in [r"color[^\n]{0,20}(\d{1,3})%", r"colour[^\n]{0,20}(\d{1,3})%", r"(\d{1,3})%[^\n]{0,20}color", r"(\d{1,3})%[^\n]{0,20}colour"]:
             match = re.search(pattern, detail_output, re.IGNORECASE)
             if match:
-                color_match = int(match.group(1))
+                color_percent = int(match.group(1))
                 break
-        if color_match is not None:
-            color_percent = color_match
 
-    if "black" in lower_detail or "toner" in lower_detail or "ink" in lower_detail:
-        bw_match = None
+    if any(k in lower_detail for k in ["black", "toner", "ink"]):
         for pattern in [r"black[^\n]{0,20}(\d{1,3})%", r"(\d{1,3})%[^\n]{0,20}black", r"toner[^\n]{0,20}(\d{1,3})%", r"ink[^\n]{0,20}(\d{1,3})%", r"(\d{1,3})%[^\n]{0,20}toner", r"(\d{1,3})%[^\n]{0,20}ink"]:
             match = re.search(pattern, detail_output, re.IGNORECASE)
             if match:
-                bw_match = int(match.group(1))
+                bw_percent = int(match.group(1))
                 break
-        if bw_match is not None:
-            bw_percent = bw_match
 
     if color_percent is None and bw_percent is None:
         ink_level = "ไม่ทราบ"
     else:
-        color_text = f"สี {color_percent}%" if color_percent is not None else "สี ไม่ทราบ"
-        bw_text = f"ขาวดำ {bw_percent}%" if bw_percent is not None else "ขาวดำ ไม่ทราบ"
+        color_text = f"สี {color_percent}%" if color_percent is not None else "สี -"
+        bw_text = f"ดำ {bw_percent}%" if bw_percent is not None else "ดำ -"
         ink_level = f"{color_text} | {bw_text}"
 
     job_progress = parse_job_progress(detail_output, queue_output)
@@ -244,7 +184,6 @@ def get_printers():
             line = line.strip()
             if not line:
                 continue
-
             match = re.search(r"(?:printer|เครื่องพิมพ์)\s+(\S+)", line, re.IGNORECASE)
             if not match:
                 continue
@@ -254,7 +193,6 @@ def get_printers():
                 detail_output = subprocess.check_output(["lpstat", "-l", "-p", printer_name]).decode("utf-8", "ignore")
             except Exception:
                 detail_output = ""
-
             try:
                 queue_output = subprocess.check_output(["lpq", "-P", printer_name], stderr=subprocess.STDOUT).decode("utf-8", "ignore")
             except Exception:
@@ -279,6 +217,17 @@ def get_printers():
 def api_printers():
     return jsonify(get_printers())
 
+@app.route('/api/cancel/<job_id>', methods=['POST'])
+def cancel_job(job_id):
+    # ป้องกัน command injection โดยอนุญาตเฉพาะตัวอักษร ตัวเลข และขีด
+    if not re.match(r'^[a-zA-Z0-9_-]+$', job_id):
+        return jsonify({"success": False, "message": "Invalid Job ID"}), 400
+    try:
+        subprocess.run(["cancel", job_id], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return jsonify({"success": True, "message": f"ยกเลิกงานพิมพ์ {job_id} เรียบร้อยแล้ว"})
+    except subprocess.CalledProcessError:
+        return jsonify({"success": False, "message": "ไม่สามารถยกเลิกงานพิมพ์ได้ (อาจพิมพ์เสร็จไปแล้ว)"}), 500
+
 @app.route('/', methods=['GET', 'POST'])
 def index():
     printers = get_printers()
@@ -293,6 +242,7 @@ def index():
         copies_value = request.form.get('copies', '1')
         paper_size = request.form.get('paper_size', 'A4')
         print_quality = request.form.get('print_quality', 'normal')
+        orientation = request.form.get('orientation', 'portrait')
 
         if file.filename == '':
             flash('กรุณาเลือกไฟล์ก่อนกดสั่งพิมพ์', 'warning')
@@ -303,39 +253,33 @@ def index():
             return redirect(request.url)
 
         try:
-            copies = int(copies_value)
+            copies = max(1, min(100, int(copies_value)))
         except ValueError:
             copies = 1
 
-        if copies < 1:
-            copies = 1
-
         if file and selected_printer:
-            filename = secure_filename(file.filename)
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+            original_name = secure_filename(file.filename)
+            unique_prefix = uuid.uuid4().hex[:6]
+            filepath = os.path.join(app.config['UPLOAD_FOLDER'], f"{unique_prefix}_{original_name}")
             file.save(filepath)
 
-            ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
+            ext = original_name.rsplit('.', 1)[1].lower() if '.' in original_name else ''
             if ext == 'pdf':
                 if not is_valid_pdf(filepath):
                     if os.path.exists(filepath):
                         os.remove(filepath)
-                    flash('ไฟล์ PDF ไม่ถูกต้องหรืออาจเสียหาย กรุณาลองอีกครั้ง', 'danger')
+                    flash('ไฟล์ PDF ไม่ถูกต้องหรือเสียหาย กรุณาตรวจสอบไฟล์อีกครั้ง', 'danger')
                     return redirect(request.url)
                 filepath = normalize_pdf(filepath)
             elif ext in ['doc', 'docx']:
                 filepath = convert_to_pdf_if_needed(filepath)
 
-            print_filename = os.path.basename(filepath)
-            orientation = request.form.get('orientation', 'portrait')
-
             try:
                 command = build_print_command(selected_printer, filepath, print_mode, copies, paper_size, print_quality, orientation)
                 subprocess.run(command, check=True)
-                mode_label = 'สี' if print_mode == 'color' else 'ขาวดำ'
-                flash(f'สำเร็จ! ส่งไฟล์ "{print_filename}" ไปยังเครื่องพิมพ์ [{selected_printer}] แล้ว', 'success')
+                flash(f'ส่งไฟล์ "{original_name}" ({copies} ชุด) ไปยังเครื่องพิมพ์ {selected_printer} เรียบร้อยแล้ว!', 'success')
             except subprocess.CalledProcessError:
-                flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยัง CUPS ได้', 'danger')
+                flash('เกิดข้อผิดพลาด: ไม่สามารถส่งงานไปยังระบบ CUPS ได้', 'danger')
             finally:
                 if os.path.exists(filepath):
                     try:

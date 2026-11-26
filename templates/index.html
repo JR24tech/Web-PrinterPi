@@ -5,1340 +5,901 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Web-PrinterPi</title>
-    <!-- Favicons & Apple Touch Icons -->
+
     <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
-    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}">
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}">
-    <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='favicon-192x192.png') }}">
-    <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='favicon.png') }}">
-    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
     <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
     <link rel="manifest" href="{{ url_for('static', filename='site.webmanifest') }}">
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Thai:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
 
-    <style>
-        body {
-            background: radial-gradient(circle at top left, #f7fbff 0%, #e8f1ff 35%, #dfe9f5 100%);
-            min-height: 100vh;
-            font-size: 0.95rem;
-            color: #22324a;
-        }
-
-        .main-card {
-            border: none;
-            border-radius: 22px;
-            box-shadow: 0 18px 45px rgba(15, 35, 66, 0.12);
-            background: rgba(255, 255, 255, 0.96);
-            backdrop-filter: blur(10px);
-        }
-
-        .hero-badge {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 56px;
-            height: 56px;
-            border-radius: 16px;
-            background: linear-gradient(135deg, #0d6efd 0%, #4f8cff 100%);
-            color: white;
-            box-shadow: 0 10px 24px rgba(13, 110, 253, 0.25);
-        }
-
-        .section-card {
-            background: linear-gradient(145deg, #f9fbff 0%, #f3f7ff 100%);
-            border: 1px solid #e2ebf8;
-            border-radius: 18px;
-            padding: 1rem 1.1rem;
-            box-shadow: 0 10px 25px rgba(15, 35, 66, 0.05);
-        }
-
-        .section-title {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 0.75rem;
-            margin-bottom: 0.9rem;
-            color: #0d6efd;
-            font-weight: 700;
-        }
-
-        .upload-layout {
-            display: grid;
-            grid-template-columns: minmax(0, 1.6fr) minmax(220px, 0.9fr);
-            gap: 1rem;
-            align-items: stretch;
-        }
-
-        .upload-drop-panel {
-            min-width: 0;
-        }
-
-        .file-preview-panel {
-            min-width: 0;
-            width: 100%;
-        }
-
-        .section-pill {
-            display: inline-flex;
-            align-items: center;
-            padding: 0.35rem 0.6rem;
-            border-radius: 999px;
-            background: rgba(13, 110, 253, 0.08);
-            color: #4a72b8;
-            font-size: 0.8rem;
-            font-weight: 600;
-            white-space: nowrap;
-        }
-
-        .printer-panel,
-        .progress-card {
-            display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
-        }
-
-        .printer-status {
-            background: #f7faff;
-            border: 1px solid #e2ebf8;
-            border-radius: 12px;
-            padding: 0.75rem 0.85rem;
-            color: #4a5f78;
-        }
-
-        .status-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        @media (max-width: 991.98px) {
-            .upload-layout {
-                grid-template-columns: 1fr;
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans Thai', 'sans-serif'],
+                    }
+                }
             }
         }
+    </script>
 
-        .settings-toggle {
-            border: 1px solid #d5e6ff;
-            border-radius: 14px;
-            background: linear-gradient(145deg, #f8fbff 0%, #eef6ff 100%);
-            color: #0d6efd;
-            padding: 0.8rem 1rem;
-            font-weight: 700;
-            transition: all 0.2s ease;
+    <style>
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type="number"] {
+            -moz-appearance: textfield;
         }
 
-        .settings-toggle:hover {
-            border-color: #0d6efd;
-            box-shadow: 0 8px 20px rgba(13, 110, 253, 0.08);
+        /* Theme Variables */
+        :root {
+            --bg-body: linear-gradient(135deg, #eef5ff 0%, #f6f9ff 50%, #e6f0ff 100%);
+            --header-bg: rgba(246, 249, 255, 0.85);
+            --header-border: rgba(219, 234, 254, 0.9);
+            --card-bg: rgba(255, 255, 255, 0.96);
+            --card-border: #dbeafe;
+            --card-shadow: 0 6px 24px rgba(37, 99, 235, 0.06);
+            --title-color: #172554;
+            --muted-color: rgba(30, 58, 138, 0.65);
+            --input-bg: rgba(239, 246, 255, 0.55);
+            --input-border: #bfdbfe;
+            --input-text: #172554;
+            --drop-bg: rgba(239, 246, 255, 0.4);
+            --drop-border: #93c5fd;
+            --drop-hover-bg: rgba(219, 234, 254, 0.65);
+            --accent-bg: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-text: #ffffff;
+            --accent-soft-bg: #eff6ff;
+            --accent-soft-text: #1d4ed8;
+            --accent-soft-border: #bfdbfe;
+            --stage-bg: #e8f1fc;
+            --stage-dot: #bfdbfe;
+            --paper-bg: #ffffff;
+            --paper-text: #334155;
         }
 
-        .settings-panel {
-            border: 1px solid #e2ebf8;
-            border-radius: 14px;
-            padding: 1rem;
-            background: linear-gradient(145deg, #f8fbff 0%, #f2f7ff 100%);
+        body[data-theme="slate"] {
+            --bg-body: #f8fafc;
+            --header-bg: rgba(248, 250, 252, 0.88);
+            --header-border: #e2e8f0;
+            --card-bg: #ffffff;
+            --card-border: #e2e8f0;
+            --card-shadow: 0 2px 12px rgba(15, 23, 42, 0.04);
+            --title-color: #0f172a;
+            --muted-color: #64748b;
+            --input-bg: #f8fafc;
+            --input-border: #cbd5e1;
+            --input-text: #0f172a;
+            --drop-bg: #f8fafc;
+            --drop-border: #cbd5e1;
+            --drop-hover-bg: #f1f5f9;
+            --accent-bg: #0f172a;
+            --accent-hover: #1e293b;
+            --accent-text: #ffffff;
+            --accent-soft-bg: #f1f5f9;
+            --accent-soft-text: #334155;
+            --accent-soft-border: #cbd5e1;
+            --stage-bg: #f1f5f9;
+            --stage-dot: #cbd5e1;
+            --paper-bg: #ffffff;
+            --paper-text: #1e293b;
         }
 
-        .drop-zone {
-            border: 1.5px dashed #7fb0ff;
-            border-radius: 16px;
-            padding: 18px;
-            text-align: center;
-            background: linear-gradient(145deg, #f8fbff 0%, #eef6ff 100%);
-            cursor: pointer;
-            transition: all 0.2s ease;
-            min-height: 180px;
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
+        body[data-theme="midnight"] {
+            --bg-body: linear-gradient(135deg, #090d16 0%, #0f172a 55%, #111c33 100%);
+            --header-bg: rgba(15, 23, 42, 0.85);
+            --header-border: rgba(30, 58, 138, 0.45);
+            --card-bg: rgba(15, 23, 42, 0.92);
+            --card-border: rgba(51, 65, 85, 0.7);
+            --card-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            --title-color: #f1f5f9;
+            --muted-color: #94a3b8;
+            --input-bg: rgba(30, 41, 59, 0.75);
+            --input-border: #334155;
+            --input-text: #f8fafc;
+            --drop-bg: rgba(30, 41, 59, 0.45);
+            --drop-border: #3b82f6;
+            --drop-hover-bg: rgba(37, 99, 235, 0.16);
+            --accent-bg: #3b82f6;
+            --accent-hover: #2563eb;
+            --accent-text: #ffffff;
+            --accent-soft-bg: rgba(59, 130, 246, 0.15);
+            --accent-soft-text: #93c5fd;
+            --accent-soft-border: rgba(59, 130, 246, 0.35);
+            --stage-bg: #0b1220;
+            --stage-dot: #1e293b;
+            --paper-bg: #f8fafc;
+            --paper-text: #0f172a;
         }
 
-        .drop-zone-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.65rem;
-            width: 100%;
-            height: 100%;
+        body {
+            background: var(--bg-body);
+            color: var(--input-text);
         }
 
-        .drop-zone-icon-pill {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            background: rgba(13, 110, 253, 0.12);
-            color: #0d6efd;
-            font-size: 1.25rem;
+        .theme-header {
+            background: var(--header-bg);
+            border-color: var(--header-border);
         }
 
-        .drop-zone-icon-pill.active {
-            background: rgba(25, 135, 84, 0.12);
-            color: #198754;
+        .theme-card {
+            background: var(--card-bg);
+            border-color: var(--card-border);
+            box-shadow: var(--card-shadow);
         }
 
-        .drop-zone-body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.35rem;
-            text-align: center;
+        .theme-title { color: var(--title-color); }
+        .theme-muted { color: var(--muted-color); }
+
+        .theme-input {
+            background: var(--input-bg);
+            border-color: var(--input-border);
+            color: var(--input-text);
         }
 
-        .drop-zone.has-file {
-            min-height: 140px;
-            padding: 1rem;
-            justify-content: flex-start;
-            align-items: stretch;
-            text-align: left;
-            width: 100%;
-            border-style: solid;
-            border-color: #9dc1ff;
-            background: linear-gradient(145deg, #f6fbff 0%, #eef7ff 100%);
+        .theme-dropzone {
+            background: var(--drop-bg);
+            border-color: var(--drop-border);
+        }
+        .theme-dropzone:hover,
+        .theme-dropzone.is-dragover {
+            background: var(--drop-hover-bg);
         }
 
-        .drop-zone.has-file .drop-zone-content {
-            align-items: flex-start;
-            justify-content: flex-start;
+        .theme-accent-btn {
+            background: var(--accent-bg);
+            color: var(--accent-text);
+        }
+        .theme-accent-btn:hover:not(:disabled) {
+            background: var(--accent-hover);
         }
 
-        .drop-zone.has-file .drop-zone-body {
-            align-items: flex-start;
-            text-align: left;
+        .theme-soft-badge {
+            background: var(--accent-soft-bg);
+            color: var(--accent-soft-text);
+            border-color: var(--accent-soft-border);
         }
 
-        .drop-zone-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #0d6efd;
-        }
-
-        .drop-zone-subtext {
-            color: #4a5f78;
-            font-size: 0.86rem;
-            line-height: 1.4;
-        }
-
-        .drop-zone-meta {
-            color: #6b7c91;
-            font-size: 0.78rem;
-        }
-
-        .drop-zone-actions {
-            margin-top: 0.25rem;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-        }
-
-        .drop-zone-actions .btn {
-            border-radius: 999px;
-            padding: 0.3rem 0.7rem;
-            font-size: 0.78rem;
-            font-weight: 600;
-        }
-
-        .drop-zone:hover,
-        .drop-zone.dragover {
-            background: linear-gradient(145deg, #f1f7ff 0%, #e4f0ff 100%);
-            border-color: #0a58ca;
-            transform: translateY(-1px);
-        }
-
-        .drop-zone-icon {
-            width: 54px;
-            height: 54px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 0.75rem;
-            background: rgba(13, 110, 253, 0.12);
-            color: #0d6efd;
-        }
-
-        .printer-option {
-            font-size: 0.9rem;
-        }
-
-        .compact-label {
-            font-size: 0.9rem;
-            margin-bottom: 0.35rem;
-            color: #0d6efd;
-            font-weight: 700;
-        }
-
-        .compact-label i {
-            color: #0d6efd;
-        }
-
-        .compact-control,
-        .form-select,
-        .form-control {
-            border-radius: 12px;
-            border: 1px solid #d9e7ff;
-            box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.03);
-            padding: 0.6rem 0.75rem;
-            font-size: 0.92rem;
-        }
-
-        .compact-control:focus,
-        .form-select:focus,
-        .form-control:focus {
-            border-color: #86b7fe;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
-        }
-
-        .compact-option {
-            padding: 0.55rem 0.7rem;
-        }
-
-        .compact-btn {
-            padding: 0.75rem 1rem;
-            font-size: 0.95rem;
-            border-radius: 999px;
-            min-height: 46px;
-        }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #0d6efd 0%, #3d8bff 100%);
-            border: none;
-            box-shadow: 0 10px 24px rgba(13, 110, 253, 0.2);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-1px);
-            box-shadow: 0 12px 28px rgba(13, 110, 253, 0.22);
-        }
-
-        /* Highlight selected print mode option */
-        .compact-option {
-            border: none;
-            padding: 0.15rem;
-        }
-
-        .compact-option .form-check-label {
-            display: block;
-            padding: 0.55rem 0.7rem;
-            border-radius: 10px;
-            border: 1px solid transparent;
-            transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, color 0.15s ease;
-        }
-
-        .compact-option .form-check-input {
-            margin-right: 0.5rem;
-        }
-
-        .compact-option .form-check-input:checked+.form-check-label {
-            background-color: #e7f1ff;
-            border-color: #0a58ca;
-            box-shadow: 0 4px 10px rgba(10, 88, 202, 0.08);
-            color: #0a58ca;
-        }
-
-        .status-ready {
-            color: #198754;
-        }
-
-        .status-printing {
-            color: #fd7e14;
-        }
-
-        .status-unknown {
-            color: #dc3545;
-        }
-
-        .ink-level-normal {
-            color: #198754;
-        }
-
-        .ink-level-low {
-            color: #fd7e14;
-        }
-
-        .ink-level-empty {
-            color: #dc3545;
-        }
-
-        .ink-level-unknown {
-            color: #6c757d;
-        }
-
-        .ink-level-text {
-            display: inline-block;
-            margin-top: 0.15rem;
-        }
-
-        .preview-label {
-            font-size: 0.82rem;
-            color: #4b6a8a;
-            font-weight: 600;
-            letter-spacing: 0.01em;
-        }
-
-        .upload-container {
-            display: flex;
-            gap: 15px;
-            align-items: flex-start;
-        }
-
-        .drop-zone {
-            flex: 1;
-        }
-
-        #previewContainer {
-            display: flex;
-        }
-
-        .file-preview-panel {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            min-height: 240px;
-            border: 1px solid #edf2fb;
-            border-radius: 16px;
-            background: #f8fafc;
-            padding: 1rem;
-        }
-
-        .paper-preview-shell {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 0.5rem;
-            width: 100%;
-            min-width: 170px;
-            padding: 0.25rem;
-            border-radius: 18px;
-            background: transparent;
+        .preview-stage {
+            background-color: var(--stage-bg);
+            background-image: radial-gradient(var(--stage-dot) 1px, transparent 1px);
+            background-size: 14px 14px;
         }
 
         .paper-sheet {
-            position: relative;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: min(100%, 230px);
             aspect-ratio: var(--paper-ratio, 1 / 1.414);
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-            box-shadow: 0 6px 16px rgba(15, 23, 42, 0.05);
-            overflow: hidden;
-            padding: 0.5rem;
+            background: var(--paper-bg);
+            transition: all 0.2s ease;
         }
-
-        .paper-sheet.preview-landscape {
-            transform: none;
+        .paper-sheet pre {
+            color: var(--paper-text);
         }
-
-        .paper-sheet #imgPreview,
-        .paper-sheet #pdfPreviewCanvas {
-            display: none;
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border-radius: 8px;
-            background: #fff;
-        }
-
-        .preview-orientation {
-            font-size: 0.7rem;
-            letter-spacing: 0.02em;
-            padding: 0.3rem 0.65rem;
-        }
-
-        /* PDF navigation buttons */
-        .pdf-nav {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .pdf-nav-btn {
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0;
-            border: 1px solid rgba(13, 110, 253, 0.12);
-            background: linear-gradient(180deg, #ffffff 0%, #eef6ff 100%);
-            color: #0d6efd;
-            box-shadow: 0 6px 14px rgba(13, 110, 253, 0.08);
-            transition: transform 0.12s ease, box-shadow 0.12s ease;
-        }
-
-        .pdf-nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(13, 110, 253, 0.12);
-        }
-
-        .pdf-nav-btn:disabled {
-            opacity: 0.45;
-            transform: none;
-            cursor: not-allowed;
-            box-shadow: none;
-        }
-
-        .pdf-page-indicator {
-            font-size: 0.9rem;
-            color: #495f78;
-            font-weight: 600;
-            min-width: 96px;
-            text-align: center;
+        .paper-sheet.bw-filter img,
+        .paper-sheet.bw-filter canvas,
+        .paper-sheet.bw-filter pre {
+            filter: grayscale(100%) contrast(1.08);
         }
     </style>
 </head>
 
-<body class="d-flex align-items-center py-3">
+<body data-theme="blue" class="min-h-screen flex flex-col antialiased pb-16 transition-colors duration-200">
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-9 col-xl-8">
-
-                <!-- บัตรควบคุมหลัก (Main Card) -->
-                <div class="card main-card p-3 p-sm-4 p-lg-5 bg-white">
-                    <div class="text-center mb-4">
-                        <div class="hero-badge mx-auto mb-2">
-                            <i class="bi bi-printer-fill fs-4"></i>
-                        </div>
-                        <h3 class="fw-bold text-primary mb-1">Web PrinterPi</h3>
-                        <p class="text-secondary-emphasis mb-0">ระบบสั่งพิมพ์เอกสารผ่านเครือข่าย VPN</p>
+    <!-- Sticky Header -->
+    <header class="theme-header sticky top-0 z-30 backdrop-blur-md border-b shadow-[0_2px_12px_rgba(37,99,235,0.04)]">
+        <div class="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-2">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <span class="theme-accent-btn w-9 h-9 rounded-xl flex items-center justify-center p-1.5 shadow-sm shrink-0 overflow-hidden">
+                    <img src="./static/favicon-192x192.png" alt="Web PrinterPi Logo" class="w-full h-full object-contain">
+                </span>
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2">
+                        <h1 class="theme-title font-bold text-base leading-none truncate">Web PrinterPi</h1>
+                        <span class="theme-soft-badge inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border shrink-0">
+                            2.0
+                        </span>
                     </div>
-
-                    <!-- เริ่มฟอร์มที่นี่ และปิดที่ท้ายสุด -->
-                    <form method="POST" enctype="multipart/form-data" id="printForm">
-
-
-                        <div class="section-card mb-3">
-                            <div class="section-title">
-                                <span><i class="bi bi-hdd-network-fill me-2"></i> เลือกเครื่องพิมพ์</span>
-                            </div>
-                            <div class="printer-panel">
-                                <select class="form-select printer-option compact-control" name="printer" id="printer"
-                                    required>
-                                    {% if printers %}
-                                    {% for printer in printers %}
-                                    <option value="{{ printer.name }}" data-status="{{ printer.status }}"
-                                        data-ink-level="{{ printer.ink_level }}"
-                                        data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}"
-                                        data-job-state-label="{{ printer.job_state_label or '' }}"
-                                        data-job-id="{{ printer.job_id or '' }}"
-                                        data-job-filename="{{ printer.job_filename or '' }}"
-                                        data-job-current-page="{{ printer.job_current_page if printer.job_current_page is not none else '' }}"
-                                        data-job-total-pages="{{ printer.job_total_pages if printer.job_total_pages is not none else '' }}">
-                                        🖨️ {{ printer.name }}
-                                    </option>
-                                    {% endfor %}
-                                    {% else %}
-                                    <option value="" disabled selected>❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS</option>
-                                    {% endif %}
-                                </select>
-
-                                <div id="printerStatus" class="printer-status">
-                                    <div class="status-row">
-                                        <span>สถานะ</span>
-                                        <span id="printerStatusText" class="fw-semibold">ไม่ทราบ</span>
-                                    </div>
-                                    <div id="printerProgressWrap" class="mt-2 d-none">
-                                        <div class="d-flex justify-content-between align-items-center mb-1">
-                                            <span>ความคืบหน้างานพิมพ์</span>
-                                            <span id="printerProgressText" class="fw-semibold">0%</span>
-                                        </div>
-                                        <div class="progress" style="height: 6px;">
-                                            <div id="printerProgressBar" class="progress-bar bg-info" role="progressbar"
-                                                style="width: 0%" aria-valuemin="0" aria-valuemax="100">
-                                            </div>
-                                        </div>
-                                        <div class="d-flex justify-content-center mt-1">
-                                            <span id="printerPageIndicator"
-                                                class="pdf-page-indicator d-none">กำลังพิมพ์หน้า 0 / 0</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div id="formAlert" class="alert alert-warning d-none mb-0" role="alert">
-                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                                    <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="section-card mb-3">
-                            <div class="section-title">
-                                <span><i class="bi bi-cloud-arrow-up-fill me-3"></i> อัปโหลดไฟล์</span>
-                            </div>
-                            <div class="upload-layout">
-                                <div class="upload-drop-panel" id="dropZoneContainer">
-                                    <div class="drop-zone h-100 p-4 rounded-3 position-relative" id="dropZone"
-                                        onclick="document.getElementById('file').click()"
-                                        style="cursor: pointer; border: 2px dashed #0d6efd; min-height: 220px; transition: all 0.2s;">
-                                        <div class="drop-zone-content">
-                                            <div class="drop-zone-icon-pill" id="dropZoneIcon">
-                                                <i class="bi bi-cloud-arrow-up"></i>
-                                            </div>
-                                            <div class="drop-zone-body">
-                                                <div class="fw-medium text-dark" id="dropZoneText">ลากไฟล์มาวางที่นี่
-                                                    หรือ
-                                                    <span class="text-primary">คลิกเพื่อเลือกไฟล์</span>
-                                                </div>
-                                                <div class="text-muted small mt-1" id="dropZoneSubText">รองรับ PDF,
-                                                    รูปภาพ และเอกสารทั่วไป</div>
-                                                <div class="drop-zone-actions" id="dropZoneActions"></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="file-preview-panel" id="previewContainer">
-                                    <div class="preview-label mb-2">ตัวอย่างก่อนพิมพ์</div>
-                                    <div class="paper-preview-shell" id="filePreview">
-                                        <div class="paper-sheet" id="paperSheet">
-                                            <img id="imgPreview" alt="ตัวอย่างภาพก่อนพิมพ์" />
-                                            <div id="pdfMainView"
-                                                style="width:100%; height:100%; display:flex; align-items:center; justify-content:center;">
-                                                <canvas id="pdfPreviewCanvas"></canvas>
-                                            </div>
-                                        </div>
-
-                                        <!-- Thumbnails + show-all toggle -->
-                                        <div class="w-100 mt-2">
-                                            <div
-                                                class="d-flex align-items-center justify-content-center mb-2 gap-3 pdf-nav">
-                                                <button id="pdfPrevBtn" type="button" class="pdf-nav-btn" disabled
-                                                    title="ย้อนกลับ"><i class="bi bi-chevron-left"></i></button>
-                                                <span id="pdfPageIndicator" class="pdf-page-indicator">หน้า 0 / 0</span>
-                                                <button id="pdfNextBtn" type="button" class="pdf-nav-btn" disabled
-                                                    title="ถัดไป"><i class="bi bi-chevron-right"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <input type="file" name="file" id="file" class="d-none" required
-                                accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx" onchange="updateFileName()">
-                        </div>
-
-                        <div class="section-card mb-3">
-                            <button class="settings-toggle w-100 d-flex justify-content-between align-items-center"
-                                type="button" data-bs-toggle="collapse" data-bs-target="#printSettings"
-                                aria-expanded="false" aria-controls="printSettings">
-                                <span><i class="bi bi-gear-fill me-2"></i> การตั้งค่าการพิมพ์</span>
-                                <i class="bi bi-chevron-down"></i>
-                            </button>
-                            <div class="collapse mt-3" id="printSettings">
-                                <div class="settings-panel">
-                                    <div class="row g-3">
-                                        <div class="col-md-6 col-lg-3">
-                                            <label for="paper_size"
-                                                class="form-label fw-bold text-primary compact-label">
-                                                <i class="bi bi-file-earmark-text me-1"></i> กระดาษ
-                                            </label>
-                                            <select class="form-select compact-control" name="paper_size"
-                                                id="paper_size">
-                                                <option value="A4" selected>A4</option>
-                                                <option value="Letter">Letter</option>
-                                                <option value="Legal">Legal</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 col-lg-3">
-                                            <label for="print_mode"
-                                                class="form-label fw-bold text-primary compact-label">
-                                                <i class="bi bi-palette-fill me-1"></i> โหมดสี
-                                            </label>
-                                            <select class="form-select compact-control" name="print_mode"
-                                                id="print_mode">
-                                                <option value="color" selected>สี</option>
-                                                <option value="bw">ขาวดำ</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 col-lg-3">
-                                            <label for="print_quality"
-                                                class="form-label fw-bold text-primary compact-label">
-                                                <i class="bi bi-speedometer2 me-1"></i> คุณภาพ
-                                            </label>
-                                            <select class="form-select compact-control" name="print_quality"
-                                                id="print_quality">
-                                                <option value="draft">ร่าง</option>
-                                                <option value="normal" selected>ทั่วไป</option>
-                                                <option value="high">สูง</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6 col-lg-3">
-                                            <label for="orientation"
-                                                class="form-label fw-bold text-primary compact-label">
-                                                <i class="bi bi-arrow-left-right me-1"></i> การจัดวาง
-                                            </label>
-                                            <select class="form-select compact-control" name="orientation"
-                                                id="orientation">
-                                                <option value="portrait" selected>แนวตั้ง</option>
-                                                <option value="landscape">แนวนอน</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- ปุ่มส่งพิมพ์ -->
-                        <div class="section-card mb-0">
-                            <div class="row g-3 align-items-end">
-                                <div class="col-12 col-sm-2">
-                                    <label for="copies" class="form-label fw-bold text-primary compact-label mb-1">
-                                        <i class="bi bi-copy me-1"></i> จำนวนชุด
-                                    </label>
-                                    <input type="number" class="form-control compact-control" name="copies" id="copies"
-                                        min="1" max="100" value="1" required>
-                                </div>
-                                <div class="col-12 col-sm-8">
-                                    <button type="submit" class="btn btn-primary fw-bold shadow-sm compact-btn w-100"
-                                        id="printActionButton">
-                                        <i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Progress Area -->
-                            <div id="uploadProgressArea" class="alert alert-info d-none mt-3 mb-0 p-3 w-100"
-                                role="status">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <i class="bi bi-cloud-arrow-up-fill"></i>
-                                        <span id="uploadProgressLabelText">อัปโหลดไฟล์</span>
-                                    </div>
-                                    <span id="uploadProgressLabel" class="fw-semibold">0%</span>
-                                </div>
-                                <div class="progress" style="height: 10px;">
-                                    <div id="uploadProgressBar"
-                                        class="progress-bar progress-bar-striped progress-bar-animated bg-success"
-                                        role="progressbar" style="width: 0%" aria-valuemin="0" aria-valuemax="100">
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-
-                </div>
-
-                <div class="text-center mt-3">
-                    <p class="text-secondary small mb-0">Web PrinterPi 1.2.1 | Developed by
-                        <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank"
-                            class="text-secondary text-decoration-none">JR24 tech</a>
-                    </p>
-                    <p class="text-secondary small mb-0">Powered by
-                        <a href="https://www.raspberrypi.com" target="_blank"
-                            class="text-secondary text-decoration-none">Raspberry Pi</a> •
-                        <a href="https://openprinting.github.io/cups" target="_blank"
-                            class="text-secondary text-decoration-none">OpenPrinting CUPS</a> •
-                        <a href="https://tailscale.com" target="_blank"
-                            class="text-secondary text-decoration-none">Tailscale</a>
-                    </p>
+                    <span class="theme-muted text-[11px] block truncate">Home VPN Printer system</span>
                 </div>
             </div>
+
+            <div class="flex items-center gap-2 shrink-0">
+                <!-- Theme Switcher -->
+                <div class="relative">
+                    <button type="button" onclick="toggleDropdown('themeMenu')" title="เปลี่ยนธีม"
+                        class="theme-soft-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border cursor-pointer transition">
+                        <i class="bi bi-palette"></i>
+                        <span id="currentThemeLabel" class="hidden sm:inline">สว่าง</span>
+                        <i class="bi bi-chevron-down text-[10px]"></i>
+                    </button>
+
+                    <div id="themeMenu"
+                        class="theme-card hidden absolute right-0 mt-1.5 w-36 rounded-2xl border p-1.5 shadow-lg z-40 text-xs space-y-0.5">
+                        <button type="button" onclick="setTheme('blue')"
+                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-blue-500/10 text-left font-medium">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-blue-600"></span>
+                                สว่าง
+                            </span>
+                            <i id="check-blue" class="bi bi-check2 text-blue-500"></i>
+                        </button>
+                        <button type="button" onclick="setTheme('slate')"
+                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-500/10 text-left font-medium">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-800"></span>
+                                มินิมอล
+                            </span>
+                            <i id="check-slate" class="bi bi-check2 text-slate-500 hidden"></i>
+                        </button>
+                        <button type="button" onclick="setTheme('midnight')"
+                            class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-indigo-500/10 text-left font-medium">
+                            <span class="flex items-center gap-2">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-400"></span>
+                                มืด
+                            </span>
+                            <i id="check-midnight" class="bi bi-check2 text-indigo-400 hidden"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Printer Status Pill -->
+                <span id="printerStatusBadge" class="theme-soft-badge inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border">
+                    <span id="printerStatusDot" class="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    <span id="printerStatusText">กำลังเช็ก...</span>
+                </span>
+            </div>
         </div>
-    </div>
+    </header>
 
-    <!-- Bootstrap 5 JavaScript Bundle -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <main class="flex-1 w-full max-w-5xl mx-auto pt-6 px-4">
 
-    <!-- JavaScript สำหรับระบบ Drag and Drop และเปลี่ยนชื่อไฟล์ -->
+        <!-- Flash Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="space-y-2 mb-5">
+                {% for category, message in messages %}
+                    {% set style_map = {
+                        'success': 'bg-blue-50 text-blue-800 border-blue-200',
+                        'danger': 'bg-rose-50 text-rose-700 border-rose-200',
+                        'warning': 'bg-amber-50 text-amber-700 border-amber-200'
+                    } %}
+                    <div class="flex items-center justify-between gap-2 px-4 py-2.5 rounded-2xl border text-xs sm:text-sm font-medium {{ style_map.get(category, 'bg-blue-50 text-blue-800 border-blue-200') }}">
+                        <span>{{ message }}</span>
+                        <button type="button" onclick="this.parentElement.remove()" class="opacity-60 hover:opacity-100">
+                            <i class="bi bi-x"></i>
+                        </button>
+                    </div>
+                {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <!-- Client Alert -->
+        <div id="formAlert" class="hidden mb-5 px-4 py-2.5 rounded-2xl border bg-amber-50 text-amber-700 border-amber-200 text-xs sm:text-sm font-medium">
+            <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
+        </div>
+
+        <form method="POST" enctype="multipart/form-data" id="printForm">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+
+                <!-- LEFT: Core Flow + Sub-function Dropdowns -->
+                <div class="theme-card lg:col-span-7 rounded-3xl border p-5 sm:p-6 space-y-5">
+
+                    <!-- Printer Select + Info Dropdown -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label for="printer" class="theme-muted text-xs font-semibold">เครื่องพิมพ์</label>
+                            <button type="button" id="togglePrinterInfoBtn" onclick="toggleDropdown('printerInfoMenu')"
+                                class="theme-muted hover:opacity-80 inline-flex items-center gap-1 text-xs font-medium transition">
+                                <span>ข้อมูลหมึก</span>
+                                <i class="bi bi-chevron-down text-[10px]"></i>
+                            </button>
+                        </div>
+
+                        <select name="printer" id="printer" required
+                            class="theme-input w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium outline-none transition">
+                            {% if printers %}
+                                {% for printer in printers %}
+                                <option value="{{ printer.name }}"
+                                    data-status="{{ printer.status }}"
+                                    data-ink-level="{{ printer.ink_level }}"
+                                    data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}"
+                                    data-job-state-label="{{ printer.job_state_label or '' }}"
+                                    data-job-id="{{ printer.job_id or '' }}"
+                                    data-job-filename="{{ printer.job_filename or '' }}">
+                                    {{ printer.name }}
+                                </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="" disabled selected>ไม่พบเครื่องพิมพ์</option>
+                            {% endif %}
+                        </select>
+
+                        <!-- Sub-function Dropdown: Ink Info -->
+                        <div id="printerInfoMenu" class="theme-input hidden mt-2 p-3 rounded-2xl border text-xs">
+                            <div class="flex items-center justify-between">
+                                <span class="theme-muted">ระดับหมึก</span>
+                                <span id="printerInkLevelText" class="theme-title font-medium">ไม่ทราบ</span>
+                            </div>
+                        </div>
+
+                        <!-- Auto-shown Active Print Status Banner -->
+                        <div id="livePrintStatusCard" class="theme-soft-badge hidden mt-3 p-3.5 rounded-2xl border text-xs space-y-2.5">
+                            <div class="flex items-center justify-between gap-2">
+                                <div class="flex items-center gap-2 min-w-0">
+                                    <span class="relative flex h-2.5 w-2.5 shrink-0">
+                                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
+                                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-current"></span>
+                                    </span>
+                                    <span id="livePrintLabel" class="font-bold shrink-0">กำลังพิมพ์</span>
+                                    <span id="livePrintFile" class="truncate font-medium"></span>
+                                </div>
+                                <button type="button" id="cancelJobBtn"
+                                    class="shrink-0 px-2.5 py-1 rounded-lg bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 font-semibold transition">
+                                    ยกเลิกงาน
+                                </button>
+                            </div>
+
+                            <div id="printerProgressWrap" class="hidden">
+                                <div class="flex justify-between text-[11px] opacity-80 mb-1">
+                                    <span>ความคืบหน้า</span>
+                                    <span id="printerProgressText" class="font-bold">0%</span>
+                                </div>
+                                <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
+                                    <div id="printerProgressBar" class="theme-accent-btn h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dropzone -->
+                    <div>
+                        <label class="theme-muted block text-xs font-semibold mb-1.5">ไฟล์เอกสาร</label>
+                        <div id="dropZone" onclick="document.getElementById('file').click()"
+                            class="theme-dropzone cursor-pointer rounded-2xl border border-dashed p-6 text-center transition">
+
+                            <div id="dropZoneDefault">
+                                <i class="bi bi-cloud-arrow-up theme-muted text-2xl block mb-1.5"></i>
+                                <p class="theme-title text-sm font-medium">วางไฟล์ที่นี่ หรือ <span class="underline underline-offset-2">เลือกไฟล์</span></p>
+                                <p class="theme-muted text-[11px] mt-1">PDF, DOC, DOCX, PNG, JPG, TXT</p>
+                            </div>
+
+                            <div id="dropZoneSelected" class="hidden text-left">
+                                <div class="flex items-center justify-between gap-3">
+                                    <div class="flex items-center gap-3 min-w-0">
+                                        <i id="selectedFileIcon" class="bi bi-file-earmark theme-title text-xl shrink-0"></i>
+                                        <div class="min-w-0">
+                                            <p id="selectedFileName" class="theme-title text-sm font-semibold truncate">file.pdf</p>
+                                            <p id="selectedFileMeta" class="theme-muted text-[11px]">0 KB</p>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-1.5 shrink-0">
+                                        <button type="button" onclick="event.stopPropagation(); document.getElementById('file').click()"
+                                            class="theme-input px-2.5 py-1 rounded-lg text-xs font-medium border transition">
+                                            เปลี่ยน
+                                        </button>
+                                        <button type="button" onclick="clearSelectedFile(event)"
+                                            class="px-2 py-1 rounded-lg text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="file" name="file" id="file" class="hidden" required accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx">
+                    </div>
+
+                    <!-- Sub-function Dropdown: Print Settings -->
+                    <div class="theme-card rounded-2xl border overflow-hidden">
+                        <button type="button" onclick="toggleDropdown('printSettingsMenu', 'settingsChevron')"
+                            class="theme-input w-full px-4 py-3 flex items-center justify-between text-xs font-semibold transition">
+                            <span class="theme-title flex items-center gap-2">
+                                <i class="bi bi-sliders"></i>
+                                ตั้งค่าการพิมพ์เพิ่มเติม
+                            </span>
+                            <span class="theme-muted flex items-center gap-2 font-normal">
+                                <span id="settingsSummaryText">A4 · แนวตั้ง · สี · ปกติ</span>
+                                <i id="settingsChevron" class="bi bi-chevron-down text-[10px] transition-transform"></i>
+                            </span>
+                        </button>
+
+                        <div id="printSettingsMenu" class="hidden p-4 border-t border-inherit grid grid-cols-2 gap-3 text-xs">
+                            <div>
+                                <label for="paper_size" class="theme-muted block font-medium mb-1">ขนาดกระดาษ</label>
+                                <select name="paper_size" id="paper_size" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="A4" selected>A4</option>
+                                    <option value="Letter">Letter</option>
+                                    <option value="Legal">Legal</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="print_mode" class="theme-muted block font-medium mb-1">โหมดสี</label>
+                                <select name="print_mode" id="print_mode" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="color" selected>สี</option>
+                                    <option value="bw">ขาวดำ</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="orientation" class="theme-muted block font-medium mb-1">การจัดวาง</label>
+                                <select name="orientation" id="orientation" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="portrait" selected>แนวตั้ง</option>
+                                    <option value="landscape">แนวนอน</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label for="print_quality" class="theme-muted block font-medium mb-1">คุณภาพ</label>
+                                <select name="print_quality" id="print_quality" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="draft">ร่าง</option>
+                                    <option value="normal" selected>ปกติ</option>
+                                    <option value="high">สูง</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Copies + Submit -->
+                    <div class="flex items-center gap-3 pt-1">
+                        <div class="theme-input flex items-center h-11 w-28 rounded-xl border overflow-hidden shrink-0">
+                            <button type="button" onclick="adjustCopies(-1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold">−</button>
+                            <input type="number" name="copies" id="copies" min="1" max="100" value="1" required
+                                class="theme-title w-full h-full bg-transparent text-center text-sm font-semibold outline-none">
+                            <button type="button" onclick="adjustCopies(1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold">+</button>
+                        </div>
+
+                        <button type="submit" id="printActionButton"
+                            class="theme-accent-btn flex-1 h-11 rounded-xl disabled:opacity-40 text-sm font-semibold shadow-sm flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
+                            <i class="bi bi-send"></i>
+                            <span>สั่งพิมพ์</span>
+                        </button>
+                    </div>
+
+                    <!-- Upload Progress -->
+                    <div id="uploadProgressArea" class="hidden pt-1">
+                        <div class="flex justify-between text-xs theme-muted mb-1">
+                            <span id="uploadProgressLabelText">กำลังอัปโหลด...</span>
+                            <span id="uploadProgressLabel" class="theme-title font-semibold">0%</span>
+                        </div>
+                        <div class="theme-input w-full h-1.5 rounded-full overflow-hidden">
+                            <div id="uploadProgressBar" class="theme-accent-btn h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- RIGHT: Live Preview -->
+                <div class="theme-card lg:col-span-5 rounded-3xl border p-5 flex flex-col min-h-[430px]">
+                    <div class="flex items-center justify-between mb-3">
+                        <span class="theme-muted text-xs font-semibold">ตัวอย่างก่อนพิมพ์</span>
+                        <span id="previewSpecBadge" class="theme-soft-badge text-[11px] px-2 py-0.5 rounded-full border">A4 · แนวตั้ง</span>
+                    </div>
+
+                    <div class="preview-stage flex-1 rounded-2xl p-5 flex flex-col items-center justify-center overflow-hidden border border-inherit">
+                        <div id="paperSheet" class="paper-sheet w-full max-w-[220px] rounded-md shadow-md p-2 flex items-center justify-center overflow-hidden">
+                            <div id="emptyPreviewState" class="text-center text-slate-400 px-2">
+                                <i class="bi bi-file-earmark text-2xl block mb-1 opacity-60"></i>
+                                <span class="text-[11px]">ยังไม่ได้เลือกไฟล์</span>
+                            </div>
+                            <img id="imgPreview" alt="Preview" class="hidden w-full h-full object-contain">
+                            <canvas id="pdfPreviewCanvas" class="hidden w-full h-full object-contain"></canvas>
+                            <pre id="txtPreview" class="hidden w-full h-full text-[9px] leading-snug whitespace-pre-wrap break-words overflow-hidden p-1 font-mono"></pre>
+                        </div>
+
+                        <div id="pdfControls" class="hidden mt-3 items-center gap-2.5 bg-white px-3 py-1 rounded-full border border-slate-200 text-xs text-slate-700">
+                            <button type="button" id="pdfPrevBtn" disabled class="hover:text-blue-600 disabled:opacity-30">
+                                <i class="bi bi-chevron-left"></i>
+                            </button>
+                            <span id="pdfPageIndicator" class="font-medium">1 / 1</span>
+                            <button type="button" id="pdfNextBtn" disabled class="hover:text-blue-600 disabled:opacity-30">
+                                <i class="bi bi-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </form>
+    </main>
+
+    <!-- Sticky Footer -->
+    <footer class="theme-header fixed bottom-0 inset-x-0 z-20 backdrop-blur-md border-t">
+        <div class="max-w-5xl mx-auto px-4 h-11 flex items-center justify-between text-[11px] theme-muted">
+            <span><strong class="theme-title font-semibold">Web PrinterPi </strong>Version 2.0</span>
+            <span>
+                Developed by
+                <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank" class="theme-title font-semibold hover:underline">
+                    JR24 tech
+                </a>
+            </span>
+        </div>
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('file');
-        const dropZoneText = document.getElementById('dropZoneText');
-        const dropZoneSubText = document.getElementById('dropZoneSubText');
-        const dropZoneIcon = document.getElementById('dropZoneIcon');
-        const dropZoneActions = document.getElementById('dropZoneActions');
-        const previewContainer = document.getElementById('previewContainer');
-        const filePreview = document.getElementById('filePreview');
+        const paperSheet = document.getElementById('paperSheet');
         const imgPreview = document.getElementById('imgPreview');
         const pdfCanvas = document.getElementById('pdfPreviewCanvas');
-        const previewOrientationLabel = document.getElementById('previewOrientationLabel');
-        const paperSheet = document.getElementById('paperSheet');
-        const formAlert = document.getElementById('formAlert');
-        const formAlertText = document.getElementById('formAlertText');
+        const txtPreview = document.getElementById('txtPreview');
+        const emptyPreviewState = document.getElementById('emptyPreviewState');
+        const pdfControls = document.getElementById('pdfControls');
         const printForm = document.getElementById('printForm');
-        const uploadProgressArea = document.getElementById('uploadProgressArea');
-        const uploadProgressLabel = document.getElementById('uploadProgressLabel');
-        const uploadProgressBar = document.getElementById('uploadProgressBar');
-        const uploadProgressLabelText = document.getElementById('uploadProgressLabelText');
-        const submitButton = printForm.querySelector('button[type="submit"]');
+        const submitButton = document.getElementById('printActionButton');
+
         let isUploadInProgress = false;
         let currentPrinterBusy = false;
+        let currentActiveJobId = null;
 
-        // Helper to render a specific PDF page into the main preview canvas
-        async function renderPdfPage(pageNumber, scale = 1.0) {
-            if (!window._previewPdfDoc || !pdfCanvas) return;
-            try {
-                const pdf = window._previewPdfDoc;
-                const numPages = window._numPdfPages || pdf.numPages || 1;
-                if (pageNumber < 1) pageNumber = 1;
-                if (pageNumber > numPages) pageNumber = numPages;
+        const THEME_NAMES = {
+            blue: 'น้ำเงิน',
+            slate: 'มินิมอล',
+            midnight: 'มิดไนท์'
+        };
 
-                const page = await pdf.getPage(pageNumber);
-                const viewport = page.getViewport({ scale: scale });
-                // resize canvas to page size
-                pdfCanvas.width = viewport.width;
-                pdfCanvas.height = viewport.height;
-                const ctx = pdfCanvas.getContext('2d');
-                // clear previous content
-                ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
-                await page.render({ canvasContext: ctx, viewport }).promise;
-                pdfCanvas.style.display = 'block';
+        function setTheme(themeName) {
+            const valid = THEME_NAMES[themeName] ? themeName : 'blue';
+            document.body.setAttribute('data-theme', valid);
+            document.getElementById('currentThemeLabel').textContent = THEME_NAMES[valid];
+            Object.keys(THEME_NAMES).forEach(k => {
+                const el = document.getElementById(`check-${k}`);
+                if (el) el.classList.toggle('hidden', k !== valid);
+            });
+            try { localStorage.setItem('webPrinterPiTheme', valid); } catch (e) {}
+            const menu = document.getElementById('themeMenu');
+            if (menu) menu.classList.add('hidden');
+        }
 
-
-                // update global current page
-                window._currentPdfPage = pageNumber;
-
-
-                // update page indicator and prev/next state
-                const pageIndicator = document.getElementById('pdfPageIndicator');
-                const prevBtn = document.getElementById('pdfPrevBtn');
-                const nextBtn = document.getElementById('pdfNextBtn');
-                const total = window._numPdfPages || numPages;
-                if (pageIndicator) pageIndicator.textContent = `หน้า ${pageNumber} / ${total}`;
-                if (prevBtn) prevBtn.disabled = pageNumber <= 1;
-                if (nextBtn) nextBtn.disabled = pageNumber >= total;
-
-            } catch (err) {
-                console.error('renderPdfPage error', err);
+        function toggleDropdown(menuId, chevronId = null) {
+            const menu = document.getElementById(menuId);
+            menu.classList.toggle('hidden');
+            if (chevronId) {
+                document.getElementById(chevronId).classList.toggle('rotate-180');
             }
+        }
+
+        document.addEventListener('click', (e) => {
+            const menu = document.getElementById('themeMenu');
+            if (menu && !menu.classList.contains('hidden') && !e.target.closest('#themeMenu') && !e.target.closest('[onclick*="themeMenu"]')) {
+                menu.classList.add('hidden');
+            }
+        });
+
+        function adjustCopies(delta) {
+            const input = document.getElementById('copies');
+            input.value = Math.max(1, Math.min(100, (parseInt(input.value || '1', 10) || 1) + delta));
+        }
+
+        function updatePreviewStyle() {
+            const paperSize = document.getElementById('paper_size').value;
+            const printMode = document.getElementById('print_mode').value;
+            const orientation = document.getElementById('orientation').value;
+            const qualityEl = document.getElementById('print_quality');
+            const qualityLabel = qualityEl.options[qualityEl.selectedIndex].text;
+
+            const ratios = {
+                A4: { portrait: '1 / 1.414', landscape: '1.414 / 1' },
+                Letter: { portrait: '1 / 1.294', landscape: '1.294 / 1' },
+                Legal: { portrait: '1 / 1.647', landscape: '1.647 / 1' }
+            };
+
+            paperSheet.style.setProperty('--paper-ratio', ratios[paperSize][orientation]);
+            paperSheet.classList.toggle('max-w-[290px]', orientation === 'landscape');
+            paperSheet.classList.toggle('max-w-[220px]', orientation !== 'landscape');
+            paperSheet.classList.toggle('bw-filter', printMode === 'bw');
+
+            const orientLabel = orientation === 'landscape' ? 'แนวนอน' : 'แนวตั้ง';
+            const modeLabel = printMode === 'bw' ? 'ขาวดำ' : 'สี';
+
+            document.getElementById('previewSpecBadge').textContent = `${paperSize} · ${orientLabel}`;
+            document.getElementById('settingsSummaryText').textContent = `${paperSize} · ${orientLabel} · ${modeLabel} · ${qualityLabel}`;
         }
 
         function formatFileSize(bytes) {
-            const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-            let size = bytes;
-            let unit = 0;
-            while (size >= 1024 && unit < units.length - 1) {
-                size /= 1024;
-                unit += 1;
-            }
-            return `${size.toFixed(1)} ${units[unit]}`;
+            const units = ['B', 'KB', 'MB', 'GB'];
+            let i = 0;
+            while (bytes >= 1024 && i < units.length - 1) { bytes /= 1024; i++; }
+            return `${bytes.toFixed(1)} ${units[i]}`;
         }
 
-        function showUploadProgress(percent, filename = '') {
-            if (!uploadProgressArea || !uploadProgressLabel || !uploadProgressBar) return;
-            uploadProgressArea.classList.remove('d-none');
-            uploadProgressLabel.textContent = `${percent}%`;
-            uploadProgressBar.style.width = `${percent}%`;
-            uploadProgressBar.setAttribute('aria-valuenow', String(percent));
-            if (filename) {
-                uploadProgressLabelText.textContent = `อัปโหลด ${filename}`;
-            }
+        function clearSelectedFile(e) {
+            if (e) e.stopPropagation();
+            fileInput.value = '';
+            document.getElementById('dropZoneDefault').classList.remove('hidden');
+            document.getElementById('dropZoneSelected').classList.add('hidden');
+            imgPreview.classList.add('hidden');
+            pdfCanvas.classList.add('hidden');
+            txtPreview.classList.add('hidden');
+            pdfControls.classList.add('hidden');
+            pdfControls.classList.remove('flex');
+            emptyPreviewState.innerHTML = `<i class="bi bi-file-earmark text-2xl block mb-1 opacity-60"></i><span class="text-[11px]">ยังไม่ได้เลือกไฟล์</span>`;
+            emptyPreviewState.classList.remove('hidden');
         }
 
-        function hideUploadProgress() {
-            if (!uploadProgressArea || !uploadProgressBar) return;
-            uploadProgressArea.classList.add('d-none');
-            uploadProgressBar.style.width = '0%';
-            uploadProgressLabel.textContent = '0%';
-            uploadProgressLabelText.textContent = 'อัปโหลดไฟล์';
+        async function renderPdfPage(pageNumber) {
+            if (!window._previewPdfDoc) return;
+            const pdf = window._previewPdfDoc;
+            const total = pdf.numPages;
+            pageNumber = Math.max(1, Math.min(total, pageNumber));
+
+            const page = await pdf.getPage(pageNumber);
+            const viewport = page.getViewport({ scale: 1.2 });
+            pdfCanvas.width = viewport.width;
+            pdfCanvas.height = viewport.height;
+            const ctx = pdfCanvas.getContext('2d');
+            ctx.clearRect(0, 0, pdfCanvas.width, pdfCanvas.height);
+            await page.render({ canvasContext: ctx, viewport }).promise;
+
+            window._currentPdfPage = pageNumber;
+            document.getElementById('pdfPageIndicator').textContent = `${pageNumber} / ${total}`;
+            document.getElementById('pdfPrevBtn').disabled = pageNumber <= 1;
+            document.getElementById('pdfNextBtn').disabled = pageNumber >= total;
         }
 
-        function escapeHtml(value) {
-            return String(value)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function resetDropZoneUI() {
-            if (dropZone) {
-                dropZone.classList.remove('has-file');
-            }
-            if (dropZoneIcon) {
-                dropZoneIcon.className = 'drop-zone-icon-pill';
-                dropZoneIcon.innerHTML = '<i class="bi bi-cloud-arrow-up"></i>';
-            }
-            if (dropZoneText) {
-                dropZoneText.innerHTML = 'ลากไฟล์มาวางที่นี่ หรือ <span class="text-primary">คลิกเพื่อเลือกไฟล์</span>';
-            }
-            if (dropZoneSubText) {
-                dropZoneSubText.innerHTML = 'รองรับ PDF, รูปภาพ และเอกสารทั่วไป';
-            }
-            if (dropZoneActions) {
-                dropZoneActions.innerHTML = '';
-            }
-        }
-
-        function renderSelectedFileState(file) {
-            if (!dropZone || !dropZoneText || !dropZoneSubText || !dropZoneActions || !dropZoneIcon) return;
-
-            dropZone.classList.add('has-file');
-
-            const ext = (file.name.split('.').pop() || 'file').toLowerCase();
-            const typeIcon = file.type.startsWith('image/') ? 'bi bi-image' : ext === 'pdf' ? 'bi bi-file-earmark-pdf' : (ext === 'doc' || ext === 'docx') ? 'bi bi-file-earmark-word' : 'bi bi-file-earmark-text';
-            const fileSize = formatFileSize(file.size);
-            const safeName = escapeHtml(file.name);
-
-            dropZoneIcon.className = 'drop-zone-icon-pill active';
-            dropZoneIcon.innerHTML = `<i class="${typeIcon}"></i>`;
-            dropZoneText.innerHTML = `<span class="drop-zone-title"><i class="bi bi-file-earmark-check me-2"></i>ไฟล์ที่เลือก</span>`;
-            dropZoneSubText.innerHTML = `<div class="drop-zone-subtext">${safeName}</div><div class="drop-zone-meta">${fileSize} • ${ext.toUpperCase()}</div>`;
-            dropZoneActions.innerHTML = `
-                <button type="button" class="btn btn-outline-primary" onclick="event.stopPropagation(); document.getElementById('file').click()">
-                    <i class="bi bi-pencil-square me-1"></i> เลือกไฟล์ใหม่
-                </button>
-                <button type="button" class="btn btn-outline-danger" onclick="event.stopPropagation(); clearSelectedFile(event)">
-                    <i class="bi bi-trash3 me-1"></i> ลบไฟล์
-                </button>`;
-        }
-
-        function updatePrintActionButtonState(isPrinterBusy = false) {
-            if (!submitButton) return;
-            const shouldDisable = isUploadInProgress || isPrinterBusy;
-            submitButton.disabled = shouldDisable;
-            submitButton.classList.toggle('disabled', shouldDisable);
-            if (!shouldDisable) {
-                submitButton.innerHTML = '<i class="bi bi-send-fill me-2"></i> สั่งพิมพ์ทันที';
-            }
-        }
-
-        function updatePreviewPaperFrame() {
-            const paperSizeSelect = document.getElementById('paper_size');
-            const orientationSelect = document.getElementById('orientation');
-            if (!paperSheet) return;
-
-            const paperSize = paperSizeSelect ? paperSizeSelect.value : 'A4';
-            const orientation = orientationSelect ? orientationSelect.value : 'portrait';
-            const paperRatios = {
-                A4: {
-                    portrait: '1 / 1.414',
-                    landscape: '1.414 / 1'
-                },
-                Letter: {
-                    portrait: '1 / 1.294',
-                    landscape: '1.294 / 1'
-                },
-                Legal: {
-                    portrait: '1 / 1.647',
-                    landscape: '1.647 / 1'
-                }
-            };
-
-            const ratio = paperRatios[paperSize]?.[orientation] || paperRatios.A4.portrait;
-            paperSheet.style.setProperty('--paper-ratio', ratio);
-            paperSheet.classList.toggle('preview-landscape', orientation === 'landscape');
-            if (previewOrientationLabel) {
-                previewOrientationLabel.textContent = orientation === 'landscape' ? 'แนวนอน' : 'แนวตั้ง';
-                previewOrientationLabel.classList.toggle('d-none', !fileInput || !fileInput.files.length);
-            }
-        }
-
-        // ตรวจจับการลากไฟล์เข้ามาวาง
-        ['dragenter', 'dragover'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.add('dragover');
-            }, false);
-        });
-
-        ['dragleave', 'drop'].forEach(eventName => {
-            dropZone.addEventListener(eventName, (e) => {
-                e.preventDefault();
-                dropZone.classList.remove('dragover');
-            }, false);
-        });
-
-        // เมื่อปล่อยไฟล์ลงในโซน
-        dropZone.addEventListener('drop', (e) => {
-            const dt = e.dataTransfer;
-            const files = dt.files;
-            if (files.length > 0) {
-                if (typeof DataTransfer !== 'undefined') {
-                    const transfer = new DataTransfer();
-                    transfer.items.add(files[0]);
-                    fileInput.files = transfer.files;
-                } else {
-                    fileInput.files = files;
-                }
-                updateFileName();
-            }
-        });
-
-        if (fileInput) {
-            fileInput.addEventListener('change', updateFileName);
-        }
-
-        const orientationSelect = document.getElementById('orientation');
-        const paperSizeSelect = document.getElementById('paper_size');
-        if (orientationSelect) {
-            orientationSelect.addEventListener('change', () => {
-                updatePreviewPaperFrame();
-                updateFileName();
-            });
-        }
-
-        if (paperSizeSelect) {
-            paperSizeSelect.addEventListener('change', () => {
-                updatePreviewPaperFrame();
-                updateFileName();
-            });
-        }
-
-        printForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            if (!fileInput.files || fileInput.files.length === 0) {
-                formAlertText.textContent = 'โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์';
-                formAlert.classList.remove('d-none');
-                formAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                return;
-            }
-
+        async function handleFileSelect() {
+            if (!fileInput.files || !fileInput.files.length) return;
             const file = fileInput.files[0];
-            const selectedPrinter = printerSelect && printerSelect.value ? printerSelect.value : 'เครื่องพิมพ์ที่เลือก';
-            const confirmMessage = `คุณต้องการส่งไฟล์ "${file.name}" ไปยังเครื่องพิมพ์ [${selectedPrinter}] หรือไม่?`;
-            if (!window.confirm(confirmMessage)) {
-                return;
-            }
+            const ext = (file.name.split('.').pop() || '').toLowerCase();
 
-            formAlert.classList.add('d-none');
-            showUploadProgress(0, file.name);
-            isUploadInProgress = true;
-            updatePrintActionButtonState(currentPrinterBusy);
-            submitButton.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>กำลังอัปโหลด...';
+            document.getElementById('dropZoneDefault').classList.add('hidden');
+            document.getElementById('dropZoneSelected').classList.remove('hidden');
+            document.getElementById('selectedFileName').textContent = file.name;
+            document.getElementById('selectedFileMeta').textContent = `${formatFileSize(file.size)} · ${ext.toUpperCase()}`;
 
-            const formData = new FormData(printForm);
-            const xhr = new XMLHttpRequest();
-            xhr.open('POST', printForm.action || window.location.pathname, true);
+            const iconEl = document.getElementById('selectedFileIcon');
+            if (file.type.startsWith('image/')) iconEl.className = 'bi bi-file-earmark-image theme-title text-xl';
+            else if (ext === 'pdf') iconEl.className = 'bi bi-file-earmark-pdf theme-title text-xl';
+            else if (['doc', 'docx'].includes(ext)) iconEl.className = 'bi bi-file-earmark-word theme-title text-xl';
+            else iconEl.className = 'bi bi-file-earmark-text theme-title text-xl';
 
-            xhr.upload.onprogress = function (event) {
-                if (event.lengthComputable) {
-                    const percentComplete = Math.round((event.loaded / event.total) * 100);
-                    showUploadProgress(percentComplete, file.name);
-                }
-            };
-
-            xhr.onload = function () {
-                isUploadInProgress = false;
-                updatePrintActionButtonState(currentPrinterBusy);
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    window.location.href = xhr.responseURL || window.location.pathname;
-                } else {
-                    hideUploadProgress();
-                    formAlertText.textContent = 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์ กรุณาลองใหม่อีกครั้ง';
-                    formAlert.classList.remove('d-none');
-                }
-            };
-
-            xhr.onerror = function () {
-                isUploadInProgress = false;
-                updatePrintActionButtonState(currentPrinterBusy);
-                hideUploadProgress();
-                formAlertText.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่';
-                formAlert.classList.remove('d-none');
-            };
-
-            xhr.send(formData);
-        });
-
-        // ฟังก์ชันล้างค่าไฟล์และคืนค่า UI
-        function showEmptyPreview() {
-            if (previewContainer) previewContainer.style.display = 'flex';
-            if (imgPreview) {
-                imgPreview.style.display = 'none';
-                imgPreview.removeAttribute('src');
-            }
-            if (pdfCanvas) pdfCanvas.style.display = 'none';
-            if (filePreview) filePreview.style.display = 'flex';
-            if (paperSheet) {
-                paperSheet.classList.remove('preview-landscape');
-                paperSheet.style.setProperty('--paper-ratio', '1 / 1.414');
-            }
-            if (previewOrientationLabel) {
-                previewOrientationLabel.classList.add('d-none');
-            }
-        }
-
-        function clearSelectedFile(event) {
-            if (event) event.stopPropagation();
-
-            if (fileInput) fileInput.value = '';
-            showEmptyPreview();
-            resetDropZoneUI();
-        }
-
-        async function updateFileName() {
-            const fileInput = document.getElementById('file');
-            if (!fileInput || !fileInput.files.length) return;
-
-            const orientationSelect = document.getElementById('orientation');
-            const file = fileInput.files[0];
-
-            if (previewContainer) previewContainer.style.display = 'flex';
-            if (filePreview) filePreview.style.display = 'flex';
-            updatePreviewPaperFrame();
-
-            renderSelectedFileState(file);
-
-            if (imgPreview) imgPreview.style.display = 'none';
-            if (pdfCanvas) pdfCanvas.style.display = 'none';
-
-            const fileExtension = file.name.split('.').pop().toLowerCase();
-            const orientationText = orientationSelect ? orientationSelect.value : 'portrait';
-            if (filePreview) {
-                filePreview.classList.toggle('preview-landscape', orientationText === 'landscape');
-            }
+            emptyPreviewState.classList.add('hidden');
+            imgPreview.classList.add('hidden');
+            pdfCanvas.classList.add('hidden');
+            txtPreview.classList.add('hidden');
+            pdfControls.classList.add('hidden');
+            pdfControls.classList.remove('flex');
 
             if (file.type.startsWith('image/')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
-                    if (imgPreview) {
-                        imgPreview.src = e.target.result;
-                        imgPreview.style.display = 'block';
-                    }
-                    if (previewOrientationLabel) {
-                        previewOrientationLabel.classList.remove('d-none');
-                    }
-                };
+                reader.onload = e => { imgPreview.src = e.target.result; imgPreview.classList.remove('hidden'); };
                 reader.readAsDataURL(file);
-            } else if (fileExtension === 'pdf') {
+            } else if (ext === 'pdf') {
                 const reader = new FileReader();
-                reader.onload = async (e) => {
-                    const pdfData = new Uint8Array(e.target.result);
+                reader.onload = async e => {
                     try {
-                        // Ensure worker is set
-                        if (pdfjsLib && pdfjsLib.GlobalWorkerOptions) {
-                            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-                        }
-
-                        const pdf = await pdfjsLib.getDocument({ data: pdfData }).promise;
-                        // Keep a global reference for later page renders
+                        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(e.target.result) }).promise;
                         window._previewPdfDoc = pdf;
-
-                        const numPages = pdf.numPages || 1;
-                        // store global counts for navigation
-                        window._numPdfPages = numPages;
-                        window._currentPdfPage = 1;
-
-                        // Show first page in main canvas by default
-                        renderPdfPage(1, 1.0);
-
-                        // show orientation label
-                        if (previewOrientationLabel) previewOrientationLabel.classList.remove('d-none');
-
-                        // hook up prev/next buttons and page indicator
-                        const prevBtn = document.getElementById('pdfPrevBtn');
-                        const nextBtn = document.getElementById('pdfNextBtn');
-                        const pageIndicator = document.getElementById('pdfPageIndicator');
-                        if (prevBtn) prevBtn.addEventListener('click', () => {
-                            const cur = window._currentPdfPage || 1;
-                            const newPage = Math.max(1, cur - 1);
-                            renderPdfPage(newPage, 1.0);
-                        });
-                        if (nextBtn) nextBtn.addEventListener('click', () => {
-                            const cur = window._currentPdfPage || 1;
-                            const total = window._numPdfPages || numPages;
-                            const newPage = Math.min(total, cur + 1);
-                            renderPdfPage(newPage, 1.0);
-                        });
-
-
-                    } catch (error) {
-                        if (pdfCanvas) pdfCanvas.style.display = 'none';
-                        console.error('PDF preview error', error);
+                        pdfCanvas.classList.remove('hidden');
+                        if (pdf.numPages > 1) { pdfControls.classList.remove('hidden'); pdfControls.classList.add('flex'); }
+                        await renderPdfPage(1);
+                    } catch (err) {
+                        emptyPreviewState.classList.remove('hidden');
                     }
                 };
                 reader.readAsArrayBuffer(file);
-            }
-
-        }
-
-    </script>
-    <script>
-        // Update printer status display below the select
-        const printerSelect = document.getElementById('printer');
-        const printerStatusText = document.getElementById('printerStatusText');
-        const printerInkLevelText = document.getElementById('printerInkLevelText');
-        const printerProgressWrap = document.getElementById('printerProgressWrap');
-        const printerProgressText = document.getElementById('printerProgressText');
-        const printerProgressBar = document.getElementById('printerProgressBar');
-
-        function renderPrinterOptions(printers) {
-            if (!printerSelect) return;
-
-            const currentValue = printerSelect.value || '';
-            printerSelect.innerHTML = '';
-
-            if (printers && printers.length > 0) {
-                printers.forEach((printer) => {
-                    const option = document.createElement('option');
-                    option.value = printer.name;
-                    option.setAttribute('data-status', printer.status || '');
-                    option.setAttribute('data-ink-level', printer.ink_level || '');
-                    option.setAttribute('data-job-progress', printer.job_progress != null ? String(printer.job_progress) : '');
-                    option.setAttribute('data-job-state-label', printer.job_state_label || '');
-                    option.setAttribute('data-job-id', printer.job_id || '');
-                    option.setAttribute('data-job-filename', printer.job_filename || '');
-                    // optional: current printing page info (if backend supplies)
-                    option.setAttribute('data-job-current-page', printer.job_current_page != null ? String(printer.job_current_page) : '');
-                    option.setAttribute('data-job-total-pages', printer.job_total_pages != null ? String(printer.job_total_pages) : '');
-                    option.textContent = `🖨️ ${printer.name}`;
-                    if (printer.name === currentValue) {
-                        option.selected = true;
-                    }
-                    printerSelect.appendChild(option);
-                });
+            } else if (ext === 'txt') {
+                const reader = new FileReader();
+                reader.onload = e => { txtPreview.textContent = e.target.result.slice(0, 1500); txtPreview.classList.remove('hidden'); };
+                reader.readAsText(file);
             } else {
-                const option = document.createElement('option');
-                option.value = '';
-                option.disabled = true;
-                option.selected = true;
-                option.textContent = '❌ ไม่พบเครื่องพิมพ์ที่เชื่อมต่อกับ CUPS';
-                printerSelect.appendChild(option);
+                emptyPreviewState.innerHTML = `<i class="bi bi-file-earmark-word text-2xl block mb-1"></i><span class="text-[11px]">แปลงเป็น PDF อัตโนมัติ</span>`;
+                emptyPreviewState.classList.remove('hidden');
             }
-
-            if (!printerSelect.value && printerSelect.options.length > 0) {
-                printerSelect.options[0].selected = true;
-            }
-
-            updatePrinterStatus();
         }
 
-        async function refreshPrinterStatus() {
-            try {
-                const response = await fetch('/api/printers');
-                if (!response.ok) {
-                    throw new Error('Failed to fetch printer status');
+        fileInput.addEventListener('change', handleFileSelect);
+        ['dragenter', 'dragover'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.add('is-dragover'); }));
+        ['dragleave', 'drop'].forEach(evt => dropZone.addEventListener(evt, e => { e.preventDefault(); dropZone.classList.remove('is-dragover'); }));
+        dropZone.addEventListener('drop', e => {
+            if (e.dataTransfer.files.length > 0) {
+                const dt = new DataTransfer();
+                dt.items.add(e.dataTransfer.files[0]);
+                fileInput.files = dt.files;
+                handleFileSelect();
+            }
+        });
+
+        document.getElementById('pdfPrevBtn').addEventListener('click', () => renderPdfPage((window._currentPdfPage || 1) - 1));
+        document.getElementById('pdfNextBtn').addEventListener('click', () => renderPdfPage((window._currentPdfPage || 1) + 1));
+
+        function updateButtonState() {
+            submitButton.disabled = isUploadInProgress || currentPrinterBusy;
+            if (!isUploadInProgress) {
+                submitButton.innerHTML = currentPrinterBusy
+                    ? '<i class="bi bi-hourglass-split"></i> <span>กำลังพิมพ์...</span>'
+                    : '<i class="bi bi-send"></i> <span>สั่งพิมพ์</span>';
+            }
+        }
+
+        printForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const alertBox = document.getElementById('formAlert');
+            if (!fileInput.files || !fileInput.files.length) {
+                document.getElementById('formAlertText').textContent = 'โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์';
+                alertBox.classList.remove('hidden');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const printer = document.getElementById('printer').value;
+            const copies = document.getElementById('copies').value;
+            if (!confirm(`ส่งพิมพ์ "${file.name}" (${copies} ชุด) ไปที่ [${printer}]?`)) return;
+
+            alertBox.classList.add('hidden');
+            isUploadInProgress = true;
+            updateButtonState();
+            submitButton.innerHTML = '<span>กำลังส่ง...</span>';
+
+            const progressArea = document.getElementById('uploadProgressArea');
+            const progressBar = document.getElementById('uploadProgressBar');
+            const progressLabel = document.getElementById('uploadProgressLabel');
+            progressArea.classList.remove('hidden');
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', window.location.pathname, true);
+            xhr.upload.onprogress = e => {
+                if (e.lengthComputable) {
+                    const pct = Math.round((e.loaded / e.total) * 100);
+                    progressBar.style.width = `${pct}%`;
+                    progressLabel.textContent = `${pct}%`;
                 }
-                const printers = await response.json();
-                renderPrinterOptions(printers);
-            } catch (error) {
-                console.error('Unable to refresh printer status:', error);
-            }
-        }
+            };
+            xhr.onload = () => {
+                isUploadInProgress = false;
+                if (xhr.status >= 200 && xhr.status < 300) window.location.href = xhr.responseURL || window.location.pathname;
+                else { progressArea.classList.add('hidden'); updateButtonState(); alert('อัปโหลดล้มเหลว'); }
+            };
+            xhr.onerror = () => {
+                isUploadInProgress = false;
+                progressArea.classList.add('hidden');
+                updateButtonState();
+                alert('เชื่อมต่อเซิร์ฟเวอร์ไม่ได้');
+            };
+            xhr.send(new FormData(printForm));
+        });
 
-        function updatePrinterStatus() {
-            if (!printerSelect || !printerStatusText) return;
+        const printerSelect = document.getElementById('printer');
+
+        function updatePrinterUI() {
             const opt = printerSelect.options[printerSelect.selectedIndex];
-            const status = opt ? opt.getAttribute('data-status') : '';
-            const inkLevel = opt ? opt.getAttribute('data-ink-level') : '';
-            const rawJobProgress = opt ? opt.getAttribute('data-job-progress') : '';
-            const jobStateLabel = opt ? opt.getAttribute('data-job-state-label') : '';
-            const jobFilename = opt ? opt.getAttribute('data-job-filename') : '';
-            const selectedFileName = fileInput && fileInput.files && fileInput.files.length > 0 ? fileInput.files[0].name : '';
-            const displayFilename = selectedFileName || jobFilename;
-            const normalizedStatus = (status || '').toLowerCase().trim();
-            const jobProgressValue = Number.parseInt(rawJobProgress, 10);
+            if (!opt || !opt.value) return;
 
-            let statusClass = 'status-unknown';
-            let displayStatus = 'ไม่ทราบ';
-            let inkClass = 'ink-level-unknown';
-            let displayInkLevel = 'ไม่ทราบ';
-            let progressVisible = false;
-            let progressPercent = 0;
-            let progressText = 'ไม่ทราบ';
-            currentPrinterBusy = false;
+            const status = (opt.getAttribute('data-status') || '').trim();
+            const stateLabel = (opt.getAttribute('data-job-state-label') || '').trim();
+            const ink = opt.getAttribute('data-ink-level') || 'ไม่ทราบ';
+            const progress = parseInt(opt.getAttribute('data-job-progress'), 10);
+            const jobId = opt.getAttribute('data-job-id');
+            const jobFile = opt.getAttribute('data-job-filename');
 
-            const filenameSuffix = displayFilename ? ` ${displayFilename}` : '';
+            const badge = document.getElementById('printerStatusBadge');
+            const dot = document.getElementById('printerStatusDot');
+            const statusText = document.getElementById('printerStatusText');
+            document.getElementById('printerInkLevelText').textContent = ink;
 
-            if (normalizedStatus.includes('idle') || normalizedStatus.includes('ready') || normalizedStatus.includes('available') || normalizedStatus.includes('พร้อม') || normalizedStatus.includes('online')) {
-                statusClass = 'status-ready';
-                displayStatus = 'พร้อมใช้งาน';
-            } else if (normalizedStatus.includes('printing') || normalizedStatus.includes('พิมพ์') || normalizedStatus.includes('processing')) {
-                statusClass = 'status-printing';
-                displayStatus = `กำลังพิมพ์..`;
-                //displayStatus = `กำลังพิมพ์${filenameSuffix}`;
-                currentPrinterBusy = true;
-            } else if (status) {
-                displayStatus = status;
+            badge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border';
+            dot.className = 'w-1.5 h-1.5 rounded-full';
+
+            const isPrinting = status.includes('กำลังพิมพ์') || stateLabel === 'กำลังพิมพ์';
+            const isQueued = status.includes('รอคิว') || stateLabel === 'รอคิว' || Boolean(jobId);
+            currentPrinterBusy = isPrinting || isQueued;
+
+            if (isPrinting) {
+                badge.classList.add('bg-amber-100', 'text-amber-800', 'border-amber-200');
+                dot.classList.add('bg-amber-500', 'animate-ping');
+                statusText.textContent = 'กำลังพิมพ์';
+            } else if (isQueued) {
+                badge.classList.add('theme-soft-badge');
+                dot.classList.add('bg-blue-500');
+                statusText.textContent = 'รอคิวพิมพ์';
+            } else if (status.includes('พร้อม') || status.toLowerCase().includes('idle')) {
+                badge.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+                dot.classList.add('bg-emerald-500');
+                statusText.textContent = 'พร้อมใช้งาน';
+            } else {
+                badge.classList.add('theme-soft-badge');
+                dot.classList.add('bg-blue-500');
+                statusText.textContent = status || 'ไม่ทราบ';
             }
 
-            const normalizedInk = (inkLevel || '').toLowerCase().trim();
-            if (normalizedInk.includes('ไม่ทราบ')) {
-                inkClass = 'ink-level-unknown';
-                displayInkLevel = 'ไม่ทราบ';
-            } else if (normalizedInk.includes('สี') || normalizedInk.includes('color') || normalizedInk.includes('colour')) {
-                displayInkLevel = inkLevel;
-                const hasLowLevel = /\b(0|[1-9]\d?)%/.test(inkLevel) && /\b(0|[1-9]\d?)%/.test(inkLevel) && inkLevel.includes('0%');
-                if (hasLowLevel) {
-                    inkClass = 'ink-level-empty';
-                } else if (inkLevel.includes('%')) {
-                    inkClass = 'ink-level-normal';
-                }
-            } else if (inkLevel) {
-                displayInkLevel = inkLevel;
-            }
+            const liveCard = document.getElementById('livePrintStatusCard');
+            const liveLabel = document.getElementById('livePrintLabel');
+            const liveFile = document.getElementById('livePrintFile');
+            const cancelBtn = document.getElementById('cancelJobBtn');
 
-            if (!Number.isNaN(jobProgressValue) && jobProgressValue >= 0 && jobProgressValue <= 100) {
-                progressVisible = true;
-                progressPercent = jobProgressValue;
-                progressText = `${jobProgressValue}%`;
-            } else if (jobStateLabel) {
-                progressVisible = false;
-                if (jobStateLabel === 'กำลังพิมพ์') {
-                    displayStatus = `กำลังพิมพ์${filenameSuffix}`;
-                    currentPrinterBusy = true;
-                } else if (jobStateLabel === 'รอคิว') {
-                    displayStatus = 'รอคิว';
-                } else if (jobStateLabel === 'เสร็จสิ้น') {
-                    displayStatus = 'เสร็จสิ้น';
-                }
-            }
+            if (isPrinting || isQueued) {
+                liveCard.classList.remove('hidden');
+                liveLabel.textContent = isPrinting ? 'กำลังพิมพ์' : 'รอคิวพิมพ์';
+                liveFile.textContent = jobFile ? `· ${jobFile}` : (jobId ? `· ${jobId}` : '');
 
-            printerStatusText.className = `fw-semibold ${statusClass}`;
-            printerStatusText.textContent = displayStatus;
-            if (printerInkLevelText) {
-                printerInkLevelText.className = `fw-semibold ${inkClass}`;
-                printerInkLevelText.textContent = displayInkLevel;
-            }
-
-            if (printerProgressWrap) {
-                printerProgressWrap.classList.toggle('d-none', !progressVisible);
-            }
-            updatePrintActionButtonState(currentPrinterBusy);
-            if (printerProgressText) {
-                printerProgressText.textContent = progressText;
-            }
-            if (printerProgressBar) {
-                printerProgressBar.style.width = `${progressPercent}%`;
-                printerProgressBar.setAttribute('aria-valuenow', String(progressPercent));
-            }
-
-            // Update printer job page indicator if backend supplies current/total page info
-            const rawJobCurrentPage = opt ? opt.getAttribute('data-job-current-page') : '';
-            const rawJobTotalPages = opt ? opt.getAttribute('data-job-total-pages') : '';
-            const curPage = Number.parseInt(rawJobCurrentPage, 10);
-            const totalPages = Number.parseInt(rawJobTotalPages, 10);
-            const printerPageIndicator = document.getElementById('printerPageIndicator');
-            if (printerPageIndicator) {
-                if (!Number.isNaN(curPage) && !Number.isNaN(totalPages) && totalPages > 0) {
-                    printerPageIndicator.textContent = `กำลังพิมพ์หน้า ${curPage} / ${totalPages}`;
-                    printerPageIndicator.classList.remove('d-none');
+                if (jobId) {
+                    currentActiveJobId = jobId;
+                    cancelBtn.classList.remove('hidden');
                 } else {
-                    printerPageIndicator.classList.add('d-none');
+                    currentActiveJobId = null;
+                    cancelBtn.classList.add('hidden');
                 }
+            } else {
+                liveCard.classList.add('hidden');
+                currentActiveJobId = null;
             }
 
+            const progWrap = document.getElementById('printerProgressWrap');
+            if ((isPrinting || isQueued) && !isNaN(progress) && progress >= 0 && progress <= 100) {
+                progWrap.classList.remove('hidden');
+                document.getElementById('printerProgressText').textContent = `${progress}%`;
+                document.getElementById('printerProgressBar').style.width = `${progress}%`;
+            } else {
+                progWrap.classList.add('hidden');
+            }
+
+            updateButtonState();
         }
 
-        if (printerSelect) {
-            printerSelect.addEventListener('change', updatePrinterStatus);
-            refreshPrinterStatus();
-            window.setInterval(refreshPrinterStatus, 5000);
+        async function refreshPrinters() {
+            try {
+                const res = await fetch('/api/printers');
+                if (!res.ok) return;
+                const printers = await res.json();
+                const currentVal = printerSelect.value;
+
+                if (printers.length > 0) {
+                    printerSelect.innerHTML = '';
+                    printers.forEach(p => {
+                        const opt = document.createElement('option');
+                        opt.value = p.name;
+                        opt.textContent = p.name;
+                        opt.setAttribute('data-status', p.status || '');
+                        opt.setAttribute('data-ink-level', p.ink_level || 'ไม่ทราบ');
+                        opt.setAttribute('data-job-progress', p.job_progress ?? '');
+                        opt.setAttribute('data-job-state-label', p.job_state_label || '');
+                        opt.setAttribute('data-job-id', p.job_id || '');
+                        opt.setAttribute('data-job-filename', p.job_filename || '');
+                        if (p.name === currentVal) opt.selected = true;
+                        printerSelect.appendChild(opt);
+                    });
+                }
+                updatePrinterUI();
+            } catch (e) {}
         }
 
-        showEmptyPreview();
+        document.getElementById('cancelJobBtn').addEventListener('click', async () => {
+            if (!currentActiveJobId) return;
+            if (!confirm(`ยกเลิกงานพิมพ์ "${currentActiveJobId}"?`)) return;
+            try {
+                const res = await fetch(`/api/cancel/${encodeURIComponent(currentActiveJobId)}`, { method: 'POST' });
+                const data = await res.json();
+                alert(data.message);
+                refreshPrinters();
+            } catch (e) {
+                alert('ยกเลิกงานพิมพ์ไม่สำเร็จ');
+            }
+        });
+
+        try {
+            const savedTheme = localStorage.getItem('webPrinterPiTheme');
+            if (savedTheme) setTheme(savedTheme);
+        } catch (e) {}
+
+        printerSelect.addEventListener('change', updatePrinterUI);
+        updatePreviewStyle();
+        updatePrinterUI();
+        setInterval(refreshPrinters, 3000);
     </script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 </body>
 
 </html>
