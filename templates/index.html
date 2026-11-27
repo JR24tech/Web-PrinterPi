@@ -296,7 +296,8 @@
     </style>
 </head>
 
-<body data-theme="blue" class="min-h-screen flex flex-col antialiased pb-16 transition-colors duration-300">
+<!-- ปรับ pb-16 เป็น pb-36 เพื่อเว้นพื้นที่ให้แถบปักหมุดด้านล่าง -->
+<body data-theme="blue" class="min-h-screen flex flex-col antialiased pb-36 transition-colors duration-300">
 
     <!-- Sticky Liquid Glass Header -->
     <header class="theme-header sticky top-0 z-30 border-b">
@@ -386,8 +387,11 @@
         {% endwith %}
 
         <!-- Client Alert -->
-        <div id="formAlert" class="glass-surface hidden mb-5 px-4 py-2.5 rounded-2xl border border-amber-300/70 text-amber-800 text-xs sm:text-sm font-medium">
+        <div id="formAlert" class="glass-surface hidden mb-5 px-4 py-2.5 rounded-2xl border border-amber-300/70 text-amber-800 text-xs sm:text-sm font-medium flex items-center justify-between">
             <span id="formAlertText">โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์</span>
+            <button type="button" onclick="this.parentElement.classList.add('hidden')" class="opacity-60 hover:opacity-100">
+                <i class="bi bi-x"></i>
+            </button>
         </div>
 
         <form method="POST" enctype="multipart/form-data" id="printForm">
@@ -417,7 +421,8 @@
                                     data-job-progress="{{ printer.job_progress if printer.job_progress is not none else '' }}"
                                     data-job-state-label="{{ printer.job_state_label or '' }}"
                                     data-job-id="{{ printer.job_id or '' }}"
-                                    data-job-filename="{{ printer.job_filename or '' }}">
+                                    data-job-filename="{{ printer.job_filename or '' }}"
+                                    data-jobs='{{ printer.jobs | tojson | safe }}'>
                                     {{ printer.name }}
                                 </option>
                                 {% endfor %}
@@ -434,7 +439,7 @@
                             </div>
                         </div>
 
-                        <!-- Auto-shown Active Print Status Banner -->
+                        <!-- Auto-shown Full Print Queue List -->
                         <div id="livePrintStatusCard" class="theme-soft-badge hidden mt-3 p-3.5 rounded-2xl border text-xs space-y-2.5">
                             <div class="flex items-center justify-between gap-2">
                                 <div class="flex items-center gap-2 min-w-0">
@@ -442,24 +447,24 @@
                                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-75"></span>
                                         <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-current"></span>
                                     </span>
-                                    <span id="livePrintLabel" class="font-bold shrink-0">กำลังพิมพ์</span>
-                                    <span id="livePrintFile" class="truncate font-medium"></span>
+                                    <span id="livePrintLabel" class="font-bold">คิวงานพิมพ์</span>
                                 </div>
-                                <button type="button" id="cancelJobBtn"
-                                    class="shrink-0 px-2.5 py-1 rounded-xl bg-white/80 hover:bg-rose-50 text-rose-600 border border-rose-200/80 font-semibold transition cursor-pointer">
-                                    ยกเลิกงาน
-                                </button>
+                                <span id="queueCountBadge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-black/10">0 งาน</span>
                             </div>
 
+                            <!-- Progress bar สำหรับงานปัจจุบัน -->
                             <div id="printerProgressWrap" class="hidden">
                                 <div class="flex justify-between text-[11px] opacity-80 mb-1">
-                                    <span>ความคืบหน้า</span>
+                                    <span>ความคืบหน้างานปัจจุบัน</span>
                                     <span id="printerProgressText" class="font-bold">0%</span>
                                 </div>
                                 <div class="w-full h-1.5 bg-black/10 rounded-full overflow-hidden">
                                     <div id="printerProgressBar" class="theme-accent-btn h-full rounded-full transition-all duration-300" style="width: 0%"></div>
                                 </div>
                             </div>
+
+                            <!-- รายการคิวงานพิมพ์ทั้งหมด -->
+                            <div id="printQueueList" class="space-y-1.5 max-h-40 overflow-y-auto pr-0.5"></div>
                         </div>
                     </div>
 
@@ -500,17 +505,47 @@
                         <input type="file" name="file" id="file" class="hidden" required accept=".pdf,.png,.jpg,.jpeg,.txt,.doc,.docx">
                     </div>
 
-                    <!-- Sub-function Dropdown: Print Settings -->
+                     <!-- Live Preview Card -->
+                    <div class="glass-surface rounded-[28px] border p-5 flex flex-col min-h-[380px]">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="theme-muted text-xs font-semibold">ตัวอย่างก่อนพิมพ์</span>
+                            <span id="previewSpecBadge" class="theme-soft-badge text-[11px] px-2.5 py-0.5 rounded-full border">A4 · แนวตั้ง</span>
+                        </div>
+
+                        <div class="preview-stage flex-1 rounded-3xl p-5 flex flex-col items-center justify-center overflow-hidden border border-white/50">
+                            <div id="paperSheet" class="paper-sheet w-full max-w-[210px] rounded-xl p-2 flex items-center justify-center overflow-hidden">
+                                <div id="emptyPreviewState" class="text-center text-slate-400 px-2">
+                                    <i class="bi bi-file-earmark text-2xl block mb-1 opacity-60"></i>
+                                    <span class="text-[11px]">ยังไม่ได้เลือกไฟล์</span>
+                                </div>
+                                <img id="imgPreview" alt="Preview" class="hidden w-full h-full object-contain">
+                                <canvas id="pdfPreviewCanvas" class="hidden w-full h-full object-contain"></canvas>
+                                <pre id="txtPreview" class="hidden w-full h-full text-[9px] leading-snug whitespace-pre-wrap break-words overflow-hidden p-1 font-mono"></pre>
+                            </div>
+
+                            <div id="pdfControls" class="glass-elevated hidden mt-3 items-center gap-2.5 px-3 py-1 rounded-full border text-xs text-slate-700">
+                                <button type="button" id="pdfPrevBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
+                                    <i class="bi bi-chevron-left"></i>
+                                </button>
+                                <span id="pdfPageIndicator" class="font-medium">1 / 1</span>
+                                <button type="button" id="pdfNextBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
+                                    <i class="bi bi-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub-function Dropdown: Print Settings (Expanded with Page Range, Duplex, Scaling) -->
                     <div class="theme-input rounded-3xl border overflow-hidden">
                         <button type="button" onclick="toggleDropdown('printSettingsMenu', 'settingsChevron')"
-                            class="w-full px-4 py-3 flex items-center justify-between text-xs font-semibold transition cursor-pointer">
-                            <span class="theme-title flex items-center gap-2">
+                            class="w-full px-4 py-3 flex items-center justify-between gap-2 text-xs font-semibold transition cursor-pointer">
+                            <span class="theme-title flex items-center gap-2 shrink-0">
                                 <i class="bi bi-sliders"></i>
                                 ตั้งค่าการพิมพ์เพิ่มเติม
                             </span>
-                            <span class="theme-muted flex items-center gap-2 font-normal">
-                                <span id="settingsSummaryText">A4 · แนวตั้ง · สี · ปกติ</span>
-                                <i id="settingsChevron" class="bi bi-chevron-down text-[10px] transition-transform"></i>
+                            <span class="theme-muted flex items-center gap-2 font-normal min-w-0">
+                                <span id="settingsSummaryText" class="truncate">A4 · แนวตั้ง · ขาวดำ · 1 หน้า</span>
+                                <i id="settingsChevron" class="bi bi-chevron-down text-[10px] transition-transform shrink-0"></i>
                             </span>
                         </button>
 
@@ -552,67 +587,104 @@
                                     <option value="high">สูง</option>
                                 </select>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Copies + Submit -->
-                    <div class="flex items-center gap-3 pt-1">
-                        <div class="theme-input flex items-center h-11 w-28 rounded-2xl border overflow-hidden shrink-0">
-                            <button type="button" onclick="adjustCopies(-1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">−</button>
-                            <input type="number" name="copies" id="copies" min="1" max="100" value="1" required
-                                class="theme-title w-full h-full bg-transparent text-center text-sm font-semibold outline-none">
-                            <button type="button" onclick="adjustCopies(1)" class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">+</button>
-                        </div>
-
-                        <button type="submit" id="printActionButton"
-                            class="theme-accent-btn flex-1 h-11 rounded-2xl disabled:opacity-40 text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
-                            <i class="bi bi-send"></i>
-                            <span>สั่งพิมพ์</span>
-                        </button>
-                    </div>
-
-                    <!-- Upload Progress -->
-                    <div id="uploadProgressArea" class="hidden pt-1">
-                        <div class="flex justify-between text-xs theme-muted mb-1">
-                            <span id="uploadProgressLabelText">กำลังอัปโหลด...</span>
-                            <span id="uploadProgressLabel" class="theme-title font-semibold">0%</span>
-                        </div>
-                        <div class="theme-input w-full h-1.5 rounded-full overflow-hidden">
-                            <div id="uploadProgressBar" class="theme-accent-btn h-full rounded-full transition-all duration-150" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- RIGHT: Live Preview -->
-                <div class="glass-surface lg:col-span-5 rounded-[28px] border p-5 flex flex-col min-h-[430px]">
-                    <div class="flex items-center justify-between mb-3">
-                        <span class="theme-muted text-xs font-semibold">ตัวอย่างก่อนพิมพ์</span>
-                        <span id="previewSpecBadge" class="theme-soft-badge text-[11px] px-2.5 py-0.5 rounded-full border">A4 · แนวตั้ง</span>
-                    </div>
-
-                    <div class="preview-stage flex-1 rounded-3xl p-5 flex flex-col items-center justify-center overflow-hidden border border-white/50">
-                        <div id="paperSheet" class="paper-sheet w-full max-w-[220px] rounded-xl p-2 flex items-center justify-center overflow-hidden">
-                            <div id="emptyPreviewState" class="text-center text-slate-400 px-2">
-                                <i class="bi bi-file-earmark text-2xl block mb-1 opacity-60"></i>
-                                <span class="text-[11px]">ยังไม่ได้เลือกไฟล์</span>
+                            <!-- ใหม่: พิมพ์ 2 หน้า (Duplex) -->
+                            <div>
+                                <label for="duplex" class="theme-muted block font-medium mb-1">การพิมพ์ 2 หน้า</label>
+                                <select name="duplex" id="duplex" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="one-sided" selected>หน้าเดียว</option>
+                                    <option value="two-sided-long-edge">2 หน้า (พลิกด้านยาว)</option>
+                                    <option value="two-sided-short-edge">2 หน้า (พลิกด้านสั้น)</option>
+                                </select>
                             </div>
-                            <img id="imgPreview" alt="Preview" class="hidden w-full h-full object-contain">
-                            <canvas id="pdfPreviewCanvas" class="hidden w-full h-full object-contain"></canvas>
-                            <pre id="txtPreview" class="hidden w-full h-full text-[9px] leading-snug whitespace-pre-wrap break-words overflow-hidden p-1 font-mono"></pre>
-                        </div>
 
-                        <div id="pdfControls" class="glass-elevated hidden mt-3 items-center gap-2.5 px-3 py-1 rounded-full border text-xs text-slate-700">
-                            <button type="button" id="pdfPrevBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
-                                <i class="bi bi-chevron-left"></i>
-                            </button>
-                            <span id="pdfPageIndicator" class="font-medium">1 / 1</span>
-                            <button type="button" id="pdfNextBtn" disabled class="hover:text-sky-600 disabled:opacity-30 cursor-pointer">
-                                <i class="bi bi-chevron-right"></i>
-                            </button>
+                            <!-- ใหม่: การปรับขนาด (Scaling) -->
+                            <div>
+                                <label for="scaling" class="theme-muted block font-medium mb-1">การปรับขนาด</label>
+                                <select name="scaling" id="scaling" onchange="updatePreviewStyle()"
+                                    class="theme-input w-full rounded-xl border px-3 py-2 outline-none">
+                                    <option value="fit" selected>พอดีหน้ากระดาษ</option>
+                                    <option value="actual">ขนาดจริง (100%)</option>
+                                </select>
+                            </div>
+
+                            <!-- ใหม่: เลือกช่วงหน้า (Page Range) -->
+                            <div class="col-span-2">
+                                <label for="page_range_mode" class="theme-muted block font-medium mb-1">ช่วงหน้า (สำหรับ PDF / เอกสาร)</label>
+                                <div class="flex flex-col sm:flex-row gap-2">
+                                    <select name="page_range_mode" id="page_range_mode" onchange="togglePageRangeInput()"
+                                        class="theme-input rounded-xl border px-3 py-2 outline-none sm:w-44 shrink-0">
+                                        <option value="all" selected>พิมพ์ทั้งหมด</option>
+                                        <option value="custom">ระบุหน้าเอง</option>
+                                    </select>
+                                    <input type="text" name="page_ranges" id="page_ranges" disabled
+                                        oninput="updatePreviewStyle()"
+                                        placeholder="เช่น 1-3, 5, 8-10"
+                                        class="theme-input w-full rounded-xl border px-3 py-2 outline-none disabled:opacity-45">
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
+                <div class="lg:col-span-5 space-y-5">
+                    <!-- ประวัติการพิมพ์ล่าสุด + สั่งพิมพ์ซ้ำ (Recent Print Jobs) -->
+                    <div class="glass-surface rounded-[28px] border p-5 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="theme-muted text-xs font-semibold flex items-center gap-1.5">
+                                <i class="bi bi-clock-history"></i>
+                                ประวัติการพิมพ์ล่าสุด
+                            </span>
+                            <span id="historyCountBadge" class="theme-soft-badge text-[10px] px-2 py-0.5 rounded-full border">0 รายการ</span>
+                        </div>
+
+                        <div id="historyList" class="space-y-2 max-h-60 overflow-y-auto pr-0.5">
+                            <p class="theme-muted text-xs text-center py-4 opacity-75">ยังไม่มีประวัติการพิมพ์</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ใหม่: Floating Sticky Action Bar (ปักหมุดจำนวนชุด + ปุ่มสั่งพิมพ์ เหนือ Footer) -->
+            <div class="fixed bottom-11 inset-x-0 z-20 px-4 pb-2.5 pt-1 pointer-events-none">
+                <div class="max-w-5xl mx-auto">
+                    <div class="glass-elevated pointer-events-auto rounded-3xl border p-2.5 sm:p-3 space-y-2">
+                        <div class="flex items-center gap-2.5 sm:gap-3">
+                            <!-- ตัวปรับจำนวนชุด -->
+                            <div class="theme-input flex items-center h-11 w-32 sm:w-36 rounded-2xl border overflow-hidden shrink-0">
+                                <button type="button" onclick="adjustCopies(-1)" aria-label="ลดจำนวนชุด"
+                                    class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">−</button>
+                                <div class="flex-1 flex flex-col items-center justify-center leading-none">
+                                    <input type="number" name="copies" id="copies" min="1" max="100" value="1" required
+                                        class="theme-title w-full bg-transparent text-center text-sm font-bold outline-none">
+                                    <span class="theme-muted text-[9px] mt-0.5">ชุด</span>
+                                </div>
+                                <button type="button" onclick="adjustCopies(1)" aria-label="เพิ่มจำนวนชุด"
+                                    class="theme-muted hover:opacity-80 w-9 h-full font-semibold cursor-pointer">+</button>
+                            </div>
+
+                            <!-- ปุ่มสั่งพิมพ์ -->
+                            <button type="submit" id="printActionButton"
+                                class="theme-accent-btn flex-1 h-11 rounded-2xl disabled:opacity-40 text-sm font-semibold flex items-center justify-center gap-2 transition cursor-pointer disabled:cursor-not-allowed">
+                                <i class="bi bi-send"></i>
+                                <span>สั่งพิมพ์</span>
+                            </button>
+                        </div>
+
+                        <!-- Upload Progress (แสดงในแถบปักหมุดด้วยเลย) -->
+                        <div id="uploadProgressArea" class="hidden px-1">
+                            <div class="flex justify-between text-xs theme-muted mb-1">
+                                <span id="uploadProgressLabelText">กำลังอัปโหลด...</span>
+                                <span id="uploadProgressLabel" class="theme-title font-semibold">0%</span>
+                            </div>
+                            <div class="theme-input w-full h-1.5 rounded-full overflow-hidden">
+                                <div id="uploadProgressBar" class="theme-accent-btn h-full rounded-full transition-all duration-150" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </form>
     </main>
@@ -620,13 +692,7 @@
     <!-- Sticky Liquid Glass Footer -->
     <footer class="theme-header fixed bottom-0 inset-x-0 z-20 border-t">
         <div class="max-w-5xl mx-auto px-4 h-11 flex items-center justify-between text-[11px] theme-muted">
-            <span><strong class="theme-title font-semibold">Web PrinterPi </strong>Version 2.0</span>
-            <span>
-                Developed by
-                <a href="https://github.com/JR24tech/Web-PrinterPi" target="_blank" class="theme-title font-semibold hover:underline">
-                    JR24 tech
-                </a>
-            </span>
+            <span><strong class="theme-title font-semibold">Developed by JR24 tech</strong> | Powered by Tailscale • OpenPrinting CUPS</span>
         </div>
     </footer>
 
@@ -644,8 +710,6 @@
         const submitButton = document.getElementById('printActionButton');
 
         let isUploadInProgress = false;
-        let currentPrinterBusy = false;
-        let currentActiveJobId = null;
 
         const THEME_CONFIG = {
             blue: { label: 'สว่าง', icon: 'bi-moon-stars-fill' },
@@ -686,12 +750,26 @@
             input.value = Math.max(1, Math.min(100, (parseInt(input.value || '1', 10) || 1) + delta));
         }
 
+        function togglePageRangeInput() {
+            const mode = document.getElementById('page_range_mode').value;
+            const input = document.getElementById('page_ranges');
+            input.disabled = (mode !== 'custom');
+            if (mode === 'custom') {
+                input.focus();
+            } else {
+                input.value = '';
+            }
+            updatePreviewStyle();
+        }
+
         function updatePreviewStyle() {
             const paperSize = document.getElementById('paper_size').value;
             const printMode = document.getElementById('print_mode').value;
             const orientation = document.getElementById('orientation').value;
-            const qualityEl = document.getElementById('print_quality');
-            const qualityLabel = qualityEl.options[qualityEl.selectedIndex].text;
+            const duplex = document.getElementById('duplex').value;
+            const scaling = document.getElementById('scaling').value;
+            const rangeMode = document.getElementById('page_range_mode').value;
+            const pageRanges = document.getElementById('page_ranges').value.trim();
 
             const ratios = {
                 A4: { portrait: '1 / 1.414', landscape: '1.414 / 1' },
@@ -700,15 +778,23 @@
             };
 
             paperSheet.style.setProperty('--paper-ratio', ratios[paperSize][orientation]);
-            paperSheet.classList.toggle('max-w-[290px]', orientation === 'landscape');
-            paperSheet.classList.toggle('max-w-[220px]', orientation !== 'landscape');
+            paperSheet.classList.toggle('max-w-[280px]', orientation === 'landscape');
+            paperSheet.classList.toggle('max-w-[210px]', orientation !== 'landscape');
             paperSheet.classList.toggle('bw-filter', printMode === 'bw');
+
+            const isFit = scaling === 'fit';
+            imgPreview.classList.toggle('object-contain', isFit);
+            imgPreview.classList.toggle('object-none', !isFit);
+            paperSheet.classList.toggle('p-2', isFit);
+            paperSheet.classList.toggle('p-0', !isFit);
 
             const orientLabel = orientation === 'landscape' ? 'แนวนอน' : 'แนวตั้ง';
             const modeLabel = printMode === 'bw' ? 'ขาวดำ' : 'สี';
+            const duplexLabel = duplex === 'one-sided' ? '1 หน้า' : '2 หน้า';
+            const rangePart = (rangeMode === 'custom' && pageRanges) ? ` · หน้า ${pageRanges}` : '';
 
-            document.getElementById('previewSpecBadge').textContent = `${paperSize} · ${orientLabel}`;
-            document.getElementById('settingsSummaryText').textContent = `${paperSize} · ${orientLabel} · ${modeLabel} · ${qualityLabel}`;
+            document.getElementById('previewSpecBadge').textContent = `${paperSize} · ${orientLabel}${rangePart}`;
+            document.getElementById('settingsSummaryText').textContent = `${paperSize} · ${orientLabel} · ${modeLabel} · ${duplexLabel}${rangePart}`;
         }
 
         function formatFileSize(bytes) {
@@ -820,20 +906,34 @@
         document.getElementById('pdfNextBtn').addEventListener('click', () => renderPdfPage((window._currentPdfPage || 1) + 1));
 
         function updateButtonState() {
-            submitButton.disabled = isUploadInProgress || currentPrinterBusy;
+            submitButton.disabled = isUploadInProgress;
             if (!isUploadInProgress) {
-                submitButton.innerHTML = currentPrinterBusy
-                    ? '<i class="bi bi-hourglass-split"></i> <span>กำลังพิมพ์...</span>'
-                    : '<i class="bi bi-send"></i> <span>สั่งพิมพ์</span>';
+                submitButton.innerHTML = '<i class="bi bi-send"></i> <span>สั่งพิมพ์</span>';
             }
+        }
+
+        function showAlert(msg) {
+            const alertBox = document.getElementById('formAlert');
+            document.getElementById('formAlertText').textContent = msg;
+            alertBox.classList.remove('hidden');
         }
 
         printForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const alertBox = document.getElementById('formAlert');
             if (!fileInput.files || !fileInput.files.length) {
-                document.getElementById('formAlertText').textContent = 'โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์';
-                alertBox.classList.remove('hidden');
+                showAlert('โปรดเลือกไฟล์ก่อนคลิกสั่งพิมพ์');
+                return;
+            }
+
+            const rangeMode = document.getElementById('page_range_mode').value;
+            const rawRanges = document.getElementById('page_ranges').value.replace(/\s+/g, '');
+            if (rangeMode === 'custom' && !/^\d+(-\d+)?(,\d+(-\d+)?)*$/.test(rawRanges)) {
+                showAlert('รูปแบบช่วงหน้าไม่ถูกต้อง (ตัวอย่างที่ถูกต้อง: 1-3, 5)');
+                if (document.getElementById('printSettingsMenu').classList.contains('hidden')) {
+                    toggleDropdown('printSettingsMenu', 'settingsChevron');
+                }
+                document.getElementById('page_ranges').focus();
                 return;
             }
 
@@ -877,6 +977,48 @@
 
         const printerSelect = document.getElementById('printer');
 
+        function escapeHtml(str) {
+            return String(str || '').replace(/[&<>"']/g, m => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            }[m]));
+        }
+
+        function renderQueueList(jobs) {
+            const queueListEl = document.getElementById('printQueueList');
+            const countBadge = document.getElementById('queueCountBadge');
+            countBadge.textContent = `${jobs.length} งาน`;
+
+            if (!jobs || jobs.length === 0) {
+                queueListEl.innerHTML = '';
+                return;
+            }
+
+            queueListEl.innerHTML = jobs.map(job => {
+                const isPrinting = job.state === 'printing';
+                const badgeClass = isPrinting
+                    ? 'bg-amber-500/20 text-amber-800 border-amber-300/60'
+                    : 'bg-white/60 text-slate-700 border-white/70';
+
+                return `
+                    <div class="flex items-center justify-between gap-2 p-2 rounded-xl bg-white/40 border border-white/40">
+                        <div class="min-w-0 flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded-lg text-[10px] font-bold border shrink-0 ${badgeClass}">
+                                ${escapeHtml(job.state_label)}
+                            </span>
+                            <div class="min-w-0">
+                                <p class="theme-title font-semibold truncate">${escapeHtml(job.filename)}</p>
+                                <p class="theme-muted text-[10px] truncate">${escapeHtml(job.job_id)}</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="cancelSpecificJob('${escapeHtml(job.job_id)}')"
+                            class="shrink-0 px-2.5 py-1 rounded-xl bg-white/85 hover:bg-rose-50 text-rose-600 border border-rose-200/80 text-[11px] font-semibold transition cursor-pointer">
+                            ยกเลิก
+                        </button>
+                    </div>
+                `;
+            }).join('');
+        }
+
         function updatePrinterUI() {
             const opt = printerSelect.options[printerSelect.selectedIndex];
             if (!opt || !opt.value) return;
@@ -885,8 +1027,13 @@
             const stateLabel = (opt.getAttribute('data-job-state-label') || '').trim();
             const ink = opt.getAttribute('data-ink-level') || 'ไม่ทราบ';
             const progress = parseInt(opt.getAttribute('data-job-progress'), 10);
-            const jobId = opt.getAttribute('data-job-id');
-            const jobFile = opt.getAttribute('data-job-filename');
+
+            let jobs = [];
+            try {
+                jobs = JSON.parse(opt.getAttribute('data-jobs') || '[]');
+            } catch (e) {
+                jobs = [];
+            }
 
             const badge = document.getElementById('printerStatusBadge');
             const printerSvg = document.getElementById('printerAnimSvg');
@@ -895,17 +1042,16 @@
 
             badge.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border backdrop-blur-md';
 
-            const isPrinting = status.includes('กำลังพิมพ์') || stateLabel === 'กำลังพิมพ์';
-            const isQueued = status.includes('รอคิว') || stateLabel === 'รอคิว' || Boolean(jobId);
-            currentPrinterBusy = isPrinting || isQueued;
+            const isPrinting = status.includes('กำลังพิมพ์') || stateLabel === 'กำลังพิมพ์' || jobs.some(j => j.state === 'printing');
+            const isQueued = status.includes('รอคิว') || stateLabel === 'รอคิว' || jobs.length > 0;
             printerSvg.classList.toggle('is-printing', isPrinting);
 
             if (isPrinting) {
                 badge.classList.add('bg-amber-500/20', 'text-amber-700', 'border-amber-300/60');
-                statusText.textContent = 'กำลังพิมพ์';
+                statusText.textContent = jobs.length > 1 ? `กำลังพิมพ์ (${jobs.length} คิว)` : 'กำลังพิมพ์';
             } else if (isQueued) {
                 badge.classList.add('theme-soft-badge');
-                statusText.textContent = 'รอคิวพิมพ์';
+                statusText.textContent = `รอคิว (${jobs.length})`;
             } else if (status.includes('พร้อม') || status.toLowerCase().includes('idle')) {
                 badge.classList.add('bg-emerald-500/15', 'text-emerald-700', 'border-emerald-300/60');
                 statusText.textContent = 'พร้อมใช้งาน';
@@ -916,24 +1062,13 @@
 
             const liveCard = document.getElementById('livePrintStatusCard');
             const liveLabel = document.getElementById('livePrintLabel');
-            const liveFile = document.getElementById('livePrintFile');
-            const cancelBtn = document.getElementById('cancelJobBtn');
 
-            if (isPrinting || isQueued) {
+            if (isPrinting || isQueued || jobs.length > 0) {
                 liveCard.classList.remove('hidden');
-                liveLabel.textContent = isPrinting ? 'กำลังพิมพ์' : 'รอคิวพิมพ์';
-                liveFile.textContent = jobFile ? `· ${jobFile}` : (jobId ? `· ${jobId}` : '');
-
-                if (jobId) {
-                    currentActiveJobId = jobId;
-                    cancelBtn.classList.remove('hidden');
-                } else {
-                    currentActiveJobId = null;
-                    cancelBtn.classList.add('hidden');
-                }
+                liveLabel.textContent = isPrinting ? 'กำลังพิมพ์ & คิวงาน' : 'คิวงานที่รอพิมพ์';
+                renderQueueList(jobs);
             } else {
                 liveCard.classList.add('hidden');
-                currentActiveJobId = null;
             }
 
             const progWrap = document.getElementById('printerProgressWrap');
@@ -967,6 +1102,7 @@
                         opt.setAttribute('data-job-state-label', p.job_state_label || '');
                         opt.setAttribute('data-job-id', p.job_id || '');
                         opt.setAttribute('data-job-filename', p.job_filename || '');
+                        opt.setAttribute('data-jobs', JSON.stringify(p.jobs || []));
                         if (p.name === currentVal) opt.selected = true;
                         printerSelect.appendChild(opt);
                     });
@@ -975,18 +1111,81 @@
             } catch (e) {}
         }
 
-        document.getElementById('cancelJobBtn').addEventListener('click', async () => {
-            if (!currentActiveJobId) return;
-            if (!confirm(`ยกเลิกงานพิมพ์ "${currentActiveJobId}"?`)) return;
+        async function cancelSpecificJob(jobId) {
+            if (!jobId) return;
+            if (!confirm(`ยกเลิกงานพิมพ์ "${jobId}"?`)) return;
             try {
-                const res = await fetch(`/api/cancel/${encodeURIComponent(currentActiveJobId)}`, { method: 'POST' });
+                const res = await fetch(`/api/cancel/${encodeURIComponent(jobId)}`, { method: 'POST' });
                 const data = await res.json();
                 alert(data.message);
                 refreshPrinters();
             } catch (e) {
                 alert('ยกเลิกงานพิมพ์ไม่สำเร็จ');
             }
-        });
+        }
+
+        async function loadPrintHistory() {
+            try {
+                const res = await fetch('/api/history');
+                if (!res.ok) return;
+                const items = await res.json();
+                const listEl = document.getElementById('historyList');
+                document.getElementById('historyCountBadge').textContent = `${items.length} รายการ`;
+
+                if (!items.length) {
+                    listEl.innerHTML = `<p class="theme-muted text-xs text-center py-4 opacity-75">ยังไม่มีประวัติการพิมพ์</p>`;
+                    return;
+                }
+
+                listEl.innerHTML = items.map(item => {
+                    const s = item.settings || {};
+                    const modeText = s.print_mode === 'color' ? 'สี' : 'ขาวดำ';
+                    const duplexText = s.duplex && s.duplex !== 'one-sided' ? ' · 2 หน้า' : '';
+                    const rangeText = s.page_ranges ? ` · หน้า ${escapeHtml(s.page_ranges)}` : '';
+                    const meta = `${escapeHtml(s.paper_size || 'A4')} · ${modeText} · ${s.copies || 1} ชุด${duplexText}${rangeText}`;
+
+                    return `
+                        <div class="theme-input flex items-center justify-between gap-2.5 p-2.5 rounded-2xl border text-xs">
+                            <div class="min-w-0">
+                                <p class="theme-title font-semibold truncate" title="${escapeHtml(item.filename)}">
+                                    ${escapeHtml(item.filename)}
+                                </p>
+                                <p class="theme-muted text-[10px] truncate mt-0.5">
+                                    ${escapeHtml(item.timestamp)} · ${meta}
+                                </p>
+                            </div>
+                            <button type="button" onclick="reprintHistoryItem('${escapeHtml(item.id)}', '${escapeHtml(item.filename)}')"
+                                class="theme-soft-badge hover:opacity-90 shrink-0 px-2.5 py-1.5 rounded-xl border text-[11px] font-semibold inline-flex items-center gap-1 transition cursor-pointer">
+                                <i class="bi bi-arrow-repeat"></i>
+                                <span>พิมพ์ซ้ำ</span>
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (e) {}
+        }
+
+        async function reprintHistoryItem(itemId, filename) {
+            const targetPrinter = printerSelect.value;
+            if (!targetPrinter) {
+                alert('ไม่พบเครื่องพิมพ์ที่พร้อมใช้งาน');
+                return;
+            }
+            if (!confirm(`สั่งพิมพ์ซ้ำ "${filename}" ไปที่ [${targetPrinter}]?`)) return;
+
+            try {
+                const res = await fetch(`/api/reprint/${encodeURIComponent(itemId)}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ printer: targetPrinter })
+                });
+                const data = await res.json();
+                alert(data.message);
+                refreshPrinters();
+            } catch (e) {
+                alert('สั่งพิมพ์ซ้ำไม่สำเร็จ');
+            }
+        }
 
         try {
             const savedTheme = localStorage.getItem('webPrinterPiTheme');
@@ -996,6 +1195,7 @@
         printerSelect.addEventListener('change', updatePrinterUI);
         updatePreviewStyle();
         updatePrinterUI();
+        loadPrintHistory();
         setInterval(refreshPrinters, 3000);
     </script>
 </body>
